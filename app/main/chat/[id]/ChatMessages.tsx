@@ -114,7 +114,7 @@ export default function ChatMessages({ conversationId, initialMessages, currentU
                   ? "bg-slate-800 text-white rounded-3xl rounded-br-sm"
                   : "bg-white text-slate-800 rounded-3xl rounded-bl-sm border border-slate-100"
               }`}>
-                <p className="leading-relaxed break-words">{msg.content}</p>
+                <p className="leading-relaxed wrap-break-words">{msg.content}</p>
                 <div className={`flex items-center gap-1.5 mt-1.5 justify-end ${isMine ? "text-slate-400" : "text-slate-400"}`}>
                   <span className="text-[11px] font-medium">{timeLabel(msg.created_at)}</span>
                   {isMine && (

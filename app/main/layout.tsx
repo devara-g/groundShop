@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { href: "/main/feed", icon: "🌐", label: "Jelajah" },
   { href: "/main/contacts", icon: "👥", label: "Teman" },
   { href: "/main/chat", icon: "💬", label: "Pesan" },
+  { href: "/main/profile", icon: "👤", label: "Profil" },
 ]
 
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
