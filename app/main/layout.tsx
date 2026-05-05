@@ -10,6 +10,15 @@ export default async function MainLayout({ children }: { children: React.ReactNo
 
   const { data: profile } = await supabase.from("profiles").select("username, avatar_url").eq("id", user.id).single()
 
+  const { data: unreadConvos } = await supabase
+    .from("conversations")
+    .select("id, messages!inner(id)")
+    .or(`participant_1.eq.${user.id},participant_2.eq.${user.id}`)
+    .eq("messages.is_read", false)
+    .neq("messages.sender_id", user.id)
+    
+  const unreadCount = unreadConvos?.reduce((acc, c) => acc + (Array.isArray(c.messages) ? c.messages.length : 0), 0) || 0
+
   return (
     <div className="flex h-screen bg-[#F8FAFC]">
       {/* Desktop Sidebar */}
@@ -25,7 +34,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
           </h2>
         </div>
         
-        <DesktopNav />
+        <DesktopNav unreadCount={unreadCount} />
 
         {/* User Card */}
         <div className="mt-auto bg-slate-50/50 hover:bg-slate-100 transition-colors rounded-2xl p-3 border border-slate-100 flex items-center justify-between group">
@@ -61,7 +70,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
 
       {/* Mobile Bottom Nav */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 backdrop-blur-xl border-t border-slate-100 pb-safe z-50">
-        <MobileNav />
+        <MobileNav unreadCount={unreadCount} />
       </div>
     </div>
   )

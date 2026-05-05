@@ -2,6 +2,8 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useEffect, useState } from "react"
+import { createClient } from "@/lib/supabase/client"
 
 const NAV_ITEMS = [
   {
@@ -51,13 +53,64 @@ const NAV_ITEMS = [
   },
 ]
 
-export function DesktopNav() {
+export function DesktopNav({ unreadCount: initialCount = 0 }: { unreadCount?: number }) {
   const pathname = usePathname()
+  const [unreadCount, setUnreadCount] = useState(initialCount)
+  const [notifCount, setNotifCount] = useState(0)
+  const supabase = createClient()
+
+  useEffect(() => {
+    async function checkData() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      
+      // Cek unread messages
+      const { data: unreadConvos } = await supabase
+        .from("conversations")
+        .select("id, messages!inner(id)")
+        .or(`participant_1.eq.${user.id},participant_2.eq.${user.id}`)
+        .eq("messages.is_read", false)
+        .neq("messages.sender_id", user.id)
+        
+      const uCount = unreadConvos?.reduce((acc, c) => acc + (Array.isArray(c.messages) ? c.messages.length : 0), 0) || 0
+      setUnreadCount(uCount)
+
+      // Update badge Notifikasi pakai localStorage (last seen)
+      if (pathname === "/main/notifications") {
+        localStorage.setItem(`last_seen_notif_${user.id}`, new Date().toISOString())
+        setNotifCount(0)
+      } else {
+        const lastSeenStr = localStorage.getItem(`last_seen_notif_${user.id}`)
+        const lastSeen = lastSeenStr ? new Date(lastSeenStr).toISOString() : new Date(0).toISOString()
+        let nCount = 0
+
+        const { count: fCount } = await supabase.from("friendships").select("id", { count: "exact", head: true }).eq("addressee_id", user.id).eq("status", "pending").gt("created_at", lastSeen)
+        if (fCount) nCount += fCount
+
+        const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single()
+        if (profile?.username) {
+          const { count: mCount } = await supabase.from("posts").select("id", { count: "exact", head: true }).ilike("content", `%@[${profile.username}]%`).gt("created_at", lastSeen)
+          if (mCount) nCount += mCount
+        }
+
+        const { data: myPosts } = await supabase.from("posts").select("id").eq("user_id", user.id)
+        if (myPosts && myPosts.length > 0) {
+          const { count: rCount } = await supabase.from("posts").select("id", { count: "exact", head: true }).in("parent_id", myPosts.map(p => p.id)).neq("user_id", user.id).gt("created_at", lastSeen)
+          if (rCount) nCount += rCount
+        }
+        setNotifCount(nCount)
+      }
+    }
+    checkData()
+  }, [pathname])
 
   return (
     <nav className="flex flex-col gap-2 flex-1">
       {NAV_ITEMS.map((item) => {
         const isActive = pathname.startsWith(item.href)
+        const isChat = item.href === "/main/chat"
+        const isNotif = item.href === "/main/notifications"
+
         return (
           <Link 
             key={item.href} 
@@ -68,8 +121,18 @@ export function DesktopNav() {
                 : "text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium"
             }`}
           >
-            <span className={`transition-transform ${isActive ? "scale-110" : "group-hover:scale-110"}`}>
+            <span className={`relative transition-transform ${isActive ? "scale-110" : "group-hover:scale-110"}`}>
               {item.icon}
+              {isChat && unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white border-2 border-white dark:border-slate-900 shadow-sm">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+              {isNotif && notifCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white border-2 border-white dark:border-slate-900 shadow-sm">
+                  {notifCount > 9 ? "9+" : notifCount}
+                </span>
+              )}
             </span>
             <span className="mt-0.5 text-[15px]">{item.label}</span>
           </Link>
@@ -79,13 +142,62 @@ export function DesktopNav() {
   )
 }
 
-export function MobileNav() {
+export function MobileNav({ unreadCount: initialCount = 0 }: { unreadCount?: number }) {
   const pathname = usePathname()
+  const [unreadCount, setUnreadCount] = useState(initialCount)
+  const [notifCount, setNotifCount] = useState(0)
+  const supabase = createClient()
+
+  useEffect(() => {
+    async function checkData() {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) return
+      
+      const { data: unreadConvos } = await supabase
+        .from("conversations")
+        .select("id, messages!inner(id)")
+        .or(`participant_1.eq.${user.id},participant_2.eq.${user.id}`)
+        .eq("messages.is_read", false)
+        .neq("messages.sender_id", user.id)
+        
+      const uCount = unreadConvos?.reduce((acc, c) => acc + (Array.isArray(c.messages) ? c.messages.length : 0), 0) || 0
+      setUnreadCount(uCount)
+
+      if (pathname === "/main/notifications") {
+        localStorage.setItem(`last_seen_notif_${user.id}`, new Date().toISOString())
+        setNotifCount(0)
+      } else {
+        const lastSeenStr = localStorage.getItem(`last_seen_notif_${user.id}`)
+        const lastSeen = lastSeenStr ? new Date(lastSeenStr).toISOString() : new Date(0).toISOString()
+        let nCount = 0
+
+        const { count: fCount } = await supabase.from("friendships").select("id", { count: "exact", head: true }).eq("addressee_id", user.id).eq("status", "pending").gt("created_at", lastSeen)
+        if (fCount) nCount += fCount
+
+        const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single()
+        if (profile?.username) {
+          const { count: mCount } = await supabase.from("posts").select("id", { count: "exact", head: true }).ilike("content", `%@[${profile.username}]%`).gt("created_at", lastSeen)
+          if (mCount) nCount += mCount
+        }
+
+        const { data: myPosts } = await supabase.from("posts").select("id").eq("user_id", user.id)
+        if (myPosts && myPosts.length > 0) {
+          const { count: rCount } = await supabase.from("posts").select("id", { count: "exact", head: true }).in("parent_id", myPosts.map(p => p.id)).neq("user_id", user.id).gt("created_at", lastSeen)
+          if (rCount) nCount += rCount
+        }
+        setNotifCount(nCount)
+      }
+    }
+    checkData()
+  }, [pathname])
 
   return (
     <nav className="flex items-center justify-around p-2">
       {NAV_ITEMS.map((item) => {
         const isActive = pathname.startsWith(item.href)
+        const isChat = item.href === "/main/chat"
+        const isNotif = item.href === "/main/notifications"
+
         return (
           <Link 
             key={item.href} 
@@ -96,7 +208,19 @@ export function MobileNav() {
                 : "text-slate-500 hover:text-slate-900 hover:bg-slate-50"
             }`}
           >
-            <span className={`mb-1 transition-transform ${isActive ? "scale-110" : ""}`}>{item.icon}</span>
+            <span className={`relative mb-1 transition-transform ${isActive ? "scale-110" : ""}`}>
+              {item.icon}
+              {isChat && unreadCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white border-2 border-white shadow-sm">
+                  {unreadCount > 9 ? "9+" : unreadCount}
+                </span>
+              )}
+              {isNotif && notifCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white border-2 border-white shadow-sm">
+                  {notifCount > 9 ? "9+" : notifCount}
+                </span>
+              )}
+            </span>
             <span className="text-[10px]">{item.label}</span>
           </Link>
         )
