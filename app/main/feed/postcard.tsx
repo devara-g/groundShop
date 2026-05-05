@@ -17,16 +17,31 @@ type Post = {
 
 const COLORS = ["bg-blue-500","bg-purple-500","bg-green-500","bg-orange-500","bg-pink-500","bg-teal-500"]
 const getColor = (name: string) => COLORS[(name?.charCodeAt(0) || 0) % COLORS.length]
+import Link from "next/link"
 
 function RenderContent({ text }: { text: string }) {
-  const parts = text.split(/(@\w+)/g)
+  // Pecah berdasarkan @[nama berspasi] ATAU @nama_biasa
+  const parts = text.split(/(@\[[^\]]+\]|@\w+)/g)
   return (
-    <p className="mt-1 text-sm leading-relaxed whitespace-pre-wrap wrap-break-words">
-      {parts.map((part, i) =>
-        part.startsWith("@")
-          ? <span key={i} className="text-blue-500 font-medium cursor-pointer hover:underline">{part}</span>
-          : part
-      )}
+    <p className="mt-1.5 text-[15px] text-slate-700 leading-relaxed whitespace-pre-wrap break-words">
+      {parts.map((part, i) => {
+        if (part.startsWith("@[")) {
+          const name = part.slice(2, -1)
+          return (
+            <Link key={i} href={`/main/u/${encodeURIComponent(name)}`} className="inline-block bg-blue-50 text-blue-600 px-1.5 py-0.5 mx-0.5 rounded-md font-semibold cursor-pointer hover:bg-blue-100 transition-colors">
+              @{name}
+            </Link>
+          )
+        } else if (part.startsWith("@")) {
+          const name = part.slice(1)
+          return (
+            <Link key={i} href={`/main/u/${encodeURIComponent(name)}`} className="inline-block bg-blue-50 text-blue-600 px-1.5 py-0.5 mx-0.5 rounded-md font-semibold cursor-pointer hover:bg-blue-100 transition-colors">
+              {part}
+            </Link>
+          )
+        }
+        return part
+      })}
     </p>
   )
 }
@@ -127,6 +142,7 @@ export default function PostCard({ post, isReply = false, rootId }: {
   const [liked, setLiked] = useState(post.is_liked ?? false)
   const [likeCount, setLikeCount] = useState(post.like_count ?? 0)
   const [bookmarked, setBookmarked] = useState(post.is_bookmarked ?? false)
+  const [showReplies, setShowReplies] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
@@ -170,35 +186,28 @@ export default function PostCard({ post, isReply = false, rootId }: {
   return (
     <div className={`bg-white ${isReply ? "pt-4 pb-2" : "p-6 border-b border-slate-100 hover:bg-slate-50/50 transition-colors"}`}>
       <div className="flex gap-4">
-        {/* Avatar — klik buka popover */}
+        {/* Avatar — klik ke profil */}
         <div className="relative shrink-0">
-          <button
-            onClick={() => setShowPopover(!showPopover)}
-            className={`w-12 h-12 ${post.profiles?.avatar_url ? 'bg-transparent' : color} rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-inner hover:opacity-90 hover:scale-105 transition-all overflow-hidden`}>
+          <Link
+            href={`/main/u/${encodeURIComponent(post.profiles?.username || "")}`}
+            className={`w-12 h-12 block ${post.profiles?.avatar_url ? 'bg-transparent' : color} rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-inner hover:opacity-90 hover:scale-105 transition-all overflow-hidden`}>
             {post.profiles?.avatar_url ? (
               <img src={post.profiles.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
             ) : (
               post.profiles?.username?.[0]?.toUpperCase() || "?"
             )}
-          </button>
-          {showPopover && post.profiles && (
-            <UserPopover
-              profile={post.profiles}
-              currentUserId={currentUserId}
-              onClose={() => setShowPopover(false)}
-            />
-          )}
+          </Link>
         </div>
 
         <div className="flex-1 min-w-0">
           {/* Header */}
           <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowPopover(!showPopover)}
+              <Link
+                href={`/main/u/${encodeURIComponent(post.profiles?.username || "")}`}
                 className="font-bold text-slate-800 hover:text-blue-600 transition-colors">
                 {post.profiles?.username || "Unknown"}
-              </button>
+              </Link>
               <span className="text-slate-400 text-xs font-medium">· {timeAgo(post.created_at)}</span>
             </div>
             {currentUserId === post.user_id && (
@@ -270,10 +279,35 @@ export default function PostCard({ post, isReply = false, rootId }: {
       </div>
 
       {post.replies && post.replies.length > 0 && (
-        <div className="ml-[28px] mt-2 border-l-2 border-slate-100 pl-8 space-y-2">
-          {post.replies.map((reply) => (
-            <PostCard key={reply.id} post={reply} isReply rootId={post.id} />
-          ))}
+        <div className="ml-[28px] mt-2 pl-8">
+          {!showReplies ? (
+            <button
+              onClick={() => setShowReplies(true)}
+              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 transition-colors flex items-center gap-3 py-1.5"
+            >
+              <div className="w-8 h-[2px] bg-slate-200 rounded-full"></div>
+              Lihat {post.replies.length} balasan
+            </button>
+          ) : (
+            <div className="border-l-2 border-slate-100 pl-5 space-y-2 mt-2 relative">
+              <button
+                onClick={() => setShowReplies(false)}
+                className="absolute -left-[1px] top-0 bottom-0 w-1 hover:bg-slate-300 transition-colors"
+                title="Sembunyikan balasan"
+              />
+              <div className="pb-2">
+                <button
+                  onClick={() => setShowReplies(false)}
+                  className="text-[12px] font-bold text-slate-400 hover:text-slate-600 mb-2 transition-colors"
+                >
+                  Sembunyikan balasan
+                </button>
+                {post.replies.map((reply) => (
+                  <PostCard key={reply.id} post={reply} isReply rootId={post.id} />
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

@@ -21,7 +21,7 @@ export default async function MainLayout({ children }: { children: React.ReactNo
             </svg>
           </div>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-            GroundShop
+            dapshop
           </h2>
         </div>
         

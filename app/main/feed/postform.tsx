@@ -36,7 +36,7 @@ export default function PostForm({
     setContent(val)
     const cursor = e.target.selectionStart
     const textUpToCursor = val.slice(0, cursor)
-    const match = textUpToCursor.match(/@(\w*)$/)
+    const match = textUpToCursor.match(/(?:^|\s)@([a-zA-Z0-9_ ]{0,25})$/)
     if (match) {
       const query = match[1]
       const { data } = await supabase
@@ -53,7 +53,8 @@ export default function PostForm({
 
   const insertMention = (username: string) => {
     const cursor = textareaRef.current?.selectionStart || content.length
-    const before = content.slice(0, cursor).replace(/@(\w*)$/, `@${username} `)
+    const mentionText = `@[${username}]`
+    const before = content.slice(0, cursor).replace(/(^|\s)@([a-zA-Z0-9_ ]{0,25})$/, `$1${mentionText} `)
     const after = content.slice(cursor)
     setContent(before + after)
     setShowSuggestions(false)
