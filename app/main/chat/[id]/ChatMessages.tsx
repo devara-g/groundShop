@@ -44,7 +44,7 @@ export default function ChatMessages({ conversationId, initialMessages, currentU
     const channel = supabase
       .channel(`chat:${conversationId}`)
       .on("postgres_changes", {
-        event: "*", // Listen to INSERT and UPDATE
+        event: "*", // Listen to INSERT, UPDATE, DELETE
         schema: "public",
         table: "messages",
       }, (payload) => {
@@ -65,9 +65,11 @@ export default function ChatMessages({ conversationId, initialMessages, currentU
           const updatedMsg = payload.new as Partial<Message>
           setMessages((prev) => {
             const exists = prev.find(m => m.id === updatedMsg.id)
-            if (!exists) return prev // Bukan pesan dari percakapan ini
+            if (!exists) return prev
             return prev.map(m => m.id === updatedMsg.id ? { ...m, ...updatedMsg } : m)
           })
+        } else if (payload.eventType === "DELETE") {
+          setMessages((prev) => prev.filter(m => m.id !== payload.old.id))
         }
       })
       
@@ -78,6 +80,16 @@ export default function ChatMessages({ conversationId, initialMessages, currentU
 
   // Group messages by date
   let lastDate = ""
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Hapus pesan ini? Pesan akan terhapus untuk semua orang.")) return
+    
+    // Optimistic UI update
+    setMessages(prev => prev.filter(m => m.id !== id))
+    
+    // Delete from DB
+    await supabase.from("messages").delete().eq("id", id)
+  }
 
   return (
     <div className="flex-1 overflow-y-auto px-4 md:px-6 py-6 flex flex-col">
@@ -99,6 +111,15 @@ export default function ChatMessages({ conversationId, initialMessages, currentU
         lastDate = msgDate
         const isMine = msg.sender_id === currentUserId
 
+        let imageUrl = null
+        let textContent = msg.content
+
+        const imgMatch = msg.content.match(/^\[image:(.+?)\]\n?([\s\S]*)$/)
+        if (imgMatch) {
+          imageUrl = imgMatch[1]
+          textContent = imgMatch[2].trim()
+        }
+
         return (
           <div key={msg.id} className="animate-in fade-in slide-in-from-bottom-2 duration-300">
             {/* Date separator */}
@@ -111,20 +132,39 @@ export default function ChatMessages({ conversationId, initialMessages, currentU
             )}
 
             {/* Message bubble */}
-            <div className={`flex ${isMine ? "justify-end" : "justify-start"} mb-2`}>
-              <div className={`max-w-[75%] px-5 py-3 text-[15px] shadow-sm ${
-                isMine
-                  ? "bg-slate-800 text-white rounded-3xl rounded-br-sm"
-                  : "bg-white text-slate-800 rounded-3xl rounded-bl-sm border border-slate-100"
-              }`}>
-                <p className="leading-relaxed wrap-break-words">{msg.content}</p>
-                <div className={`flex items-center gap-1.5 mt-1.5 justify-end ${isMine ? "text-slate-400" : "text-slate-400"}`}>
-                  <span className="text-[11px] font-medium">{timeLabel(msg.created_at)}</span>
-                  {isMine && (
-                    <span className={`text-[13px] font-bold tracking-tighter ${msg.is_read ? "text-blue-400 drop-shadow-[0_0_2px_rgba(96,165,250,0.5)]" : "text-slate-400"}`}>
-                      ✓✓
-                    </span>
+            <div className={`flex ${isMine ? "justify-end" : "justify-start"} mb-2 group`}>
+              <div className="relative flex items-center max-w-[75%]">
+                {/* Tombol Delete (WhatsApp Style) - Muncul pas di-hover atau di sisi pesan sendiri */}
+                {isMine && (
+                  <button
+                    onClick={() => handleDelete(msg.id)}
+                    className="absolute top-1/2 -translate-y-1/2 -left-10 w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-red-100 z-10"
+                    title="Hapus pesan"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                )}
+
+                <div className={`px-5 py-3 text-[15px] shadow-sm relative w-full ${
+                  isMine
+                    ? "bg-slate-800 text-white rounded-3xl rounded-br-sm"
+                    : "bg-white text-slate-800 rounded-3xl rounded-bl-sm border border-slate-100"
+                }`}>
+                  {imageUrl && (
+                    <img src={imageUrl} alt="attachment" className="rounded-2xl max-w-full mb-2 max-h-64 object-cover border border-white/20" />
                   )}
+                  {textContent && <p className="leading-relaxed whitespace-pre-wrap [word-break:break-word]">{textContent}</p>}
+                  
+                  <div className={`flex items-center gap-1.5 mt-1.5 justify-end ${isMine ? "text-slate-400" : "text-slate-400"}`}>
+                    <span className="text-[11px] font-medium">{timeLabel(msg.created_at)}</span>
+                    {isMine && (
+                      <span className={`text-[13px] font-bold tracking-tighter ${msg.is_read ? "text-blue-400 drop-shadow-[0_0_2px_rgba(96,165,250,0.5)]" : "text-slate-400"}`}>
+                        ✓✓
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
