@@ -26,6 +26,97 @@ function dayLabel(date: string) {
   return d.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" })
 }
 
+function CustomAudioPlayer({ src, isMine }: { src: string, isMine: boolean }) {
+  const [isPlaying, setIsPlaying] = useState(false)
+  const [duration, setDuration] = useState(0)
+  const [currentTime, setCurrentTime] = useState(0)
+  const audioRef = useRef<HTMLAudioElement>(null)
+
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+    
+    const setAudioData = () => {
+      if (isFinite(audio.duration)) setDuration(audio.duration)
+    }
+    const setAudioTime = () => setCurrentTime(audio.currentTime)
+    const onEnd = () => setIsPlaying(false)
+    
+    audio.addEventListener('loadedmetadata', setAudioData)
+    audio.addEventListener('durationchange', setAudioData)
+    audio.addEventListener('timeupdate', setAudioTime)
+    audio.addEventListener('ended', onEnd)
+    
+    return () => {
+      audio.removeEventListener('loadedmetadata', setAudioData)
+      audio.removeEventListener('durationchange', setAudioData)
+      audio.removeEventListener('timeupdate', setAudioTime)
+      audio.removeEventListener('ended', onEnd)
+    }
+  }, [])
+
+  const togglePlay = () => {
+    if (isPlaying) {
+      audioRef.current?.pause()
+    } else {
+      audioRef.current?.play()
+    }
+    setIsPlaying(!isPlaying)
+  }
+
+  const formatTime = (time: number) => {
+    if (!time || !isFinite(time)) return "0:00"
+    const m = Math.floor(time / 60)
+    const s = Math.floor(time % 60).toString().padStart(2, '0')
+    return `${m}:${s}`
+  }
+
+  const progress = duration > 0 ? (currentTime / duration) * 100 : 0
+
+  return (
+    <div className={`flex items-center gap-3 w-full min-w-[220px] max-w-[280px] p-2 rounded-2xl ${isMine ? 'bg-black/20' : 'bg-slate-100'} mb-2 shadow-inner`}>
+      <audio ref={audioRef} src={src} preload="metadata" />
+      <button 
+        onClick={togglePlay}
+        className={`w-10 h-10 shrink-0 rounded-full flex items-center justify-center transition-transform hover:scale-105 ${isMine ? 'bg-white text-slate-800' : 'bg-blue-500 text-white shadow-md'}`}
+      >
+        {isPlaying ? (
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+            <path fillRule="evenodd" d="M6.75 5.25a.75.75 0 01.75-.75H9a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H7.5a.75.75 0 01-.75-.75V5.25zm7.5 0A.75.75 0 0115 4.5h1.5a.75.75 0 01.75.75v13.5a.75.75 0 01-.75.75H15a.75.75 0 01-.75-.75V5.25z" clipRule="evenodd" />
+          </svg>
+        ) : (
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 ml-0.5" viewBox="0 0 24 24" fill="currentColor">
+            <path fillRule="evenodd" d="M4.5 5.653c0-1.426 1.529-2.33 2.779-1.643l11.54 6.348c1.295.712 1.295 2.573 0 3.285L7.28 19.991c-1.25.687-2.779-.217-2.779-1.643V5.653z" clipRule="evenodd" />
+          </svg>
+        )}
+      </button>
+
+      <div className="flex-1 flex flex-col gap-1.5 justify-center">
+        <div 
+          className={`w-full h-1.5 rounded-full ${isMine ? 'bg-white/30' : 'bg-slate-300'} cursor-pointer overflow-hidden relative`}
+          onClick={(e) => {
+            if (!audioRef.current || duration === 0) return
+            const rect = e.currentTarget.getBoundingClientRect()
+            const percent = (e.clientX - rect.left) / rect.width
+            audioRef.current.currentTime = percent * duration
+            setCurrentTime(percent * duration)
+          }}
+        >
+          <div 
+            className={`h-full rounded-full transition-all duration-100 ${isMine ? 'bg-white' : 'bg-blue-500'}`}
+            style={{ width: `${progress}%` }}
+          />
+        </div>
+        
+        <div className={`text-[11px] font-bold flex justify-between ${isMine ? 'text-white/80' : 'text-slate-500'}`}>
+          <span>{formatTime(currentTime)}</span>
+          <span>{duration > 0 ? formatTime(duration) : 'VN'}</span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function ChatMessages({ conversationId, initialMessages, currentUserId }: {
   conversationId: string
   initialMessages: Message[]
@@ -122,6 +213,7 @@ export default function ChatMessages({ conversationId, initialMessages, currentU
 
         let replyToId = null
         let imageUrl = null
+        let audioUrl = null
         let textContent = msg.content
 
         const replyMatch = textContent.match(/^\[reply:(.+?)\]\n?([\s\S]*)$/)
@@ -136,13 +228,24 @@ export default function ChatMessages({ conversationId, initialMessages, currentU
           textContent = imgMatch[2].trim()
         }
 
+        const audioMatch = textContent.match(/^\[audio:(.+?)\]\n?([\s\S]*)$/)
+        if (audioMatch) {
+          audioUrl = audioMatch[1]
+          textContent = audioMatch[2].trim()
+        }
+
         const repliedMsg = replyToId ? messages.find(m => m.id === replyToId) : null
         let repliedPreview = ""
         if (repliedMsg) {
           let text = repliedMsg.content.replace(/^\[reply:.+?\]\n?/g, "")
           const hasImg = text.match(/^\[image:.+?\]/)
-          text = text.replace(/^\[image:.+?\]\n?/g, "").trim()
-          repliedPreview = hasImg ? (text ? `📷 ${text}` : "📷 Gambar") : text
+          text = text.replace(/^\[image:.+?\]\n?/g, "")
+          const hasAudio = text.match(/^\[audio:.+?\]/)
+          text = text.replace(/^\[audio:.+?\]\n?/g, "").trim()
+          
+          if (hasImg) repliedPreview = text ? `📷 ${text}` : "📷 Gambar"
+          else if (hasAudio) repliedPreview = "🎤 Pesan Suara"
+          else repliedPreview = text
         }
 
         return (
@@ -181,6 +284,9 @@ export default function ChatMessages({ conversationId, initialMessages, currentU
 
                   {imageUrl && (
                     <img src={imageUrl} alt="attachment" className="rounded-2xl max-w-full mb-2 max-h-64 object-cover border border-white/20" />
+                  )}
+                  {audioUrl && (
+                    <CustomAudioPlayer src={audioUrl} isMine={isMine} />
                   )}
                   {textContent && <p className="leading-relaxed whitespace-pre-wrap [word-break:break-word]">{textContent}</p>}
                   

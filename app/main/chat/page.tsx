@@ -16,10 +16,13 @@ function timeAgo(date: string) {
 function formatMessagePreview(content: string) {
   let text = content.replace(/^\[reply:.+?\]\n?/g, "")
   const hasImage = text.match(/^\[image:.+?\]/)
-  text = text.replace(/^\[image:.+?\]\n?/g, "").trim()
+  text = text.replace(/^\[image:.+?\]\n?/g, "")
+  const hasAudio = text.match(/^\[audio:.+?\]/)
+  text = text.replace(/^\[audio:.+?\]\n?/g, "").trim()
   
   if (hasImage && !text) return "📷 Mengirim gambar"
   if (hasImage && text) return `📷 ${text}`
+  if (hasAudio) return "🎤 Pesan suara"
   return text || "Pesan"
 }
 
