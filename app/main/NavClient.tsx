@@ -60,9 +60,11 @@ export function DesktopNav({ unreadCount: initialCount = 0 }: { unreadCount?: nu
   const supabase = createClient()
 
   useEffect(() => {
+    let isMounted = true
+
     async function checkData() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user || !isMounted) return
       
       // Cek unread messages
       const { data: unreadConvos } = await supabase
@@ -72,6 +74,7 @@ export function DesktopNav({ unreadCount: initialCount = 0 }: { unreadCount?: nu
         .eq("messages.is_read", false)
         .neq("messages.sender_id", user.id)
         
+      if (!isMounted) return
       const uCount = unreadConvos?.reduce((acc, c) => acc + (Array.isArray(c.messages) ? c.messages.length : 0), 0) || 0
       setUnreadCount(uCount)
 
@@ -98,10 +101,18 @@ export function DesktopNav({ unreadCount: initialCount = 0 }: { unreadCount?: nu
           const { count: rCount } = await supabase.from("posts").select("id", { count: "exact", head: true }).in("parent_id", myPosts.map(p => p.id)).neq("user_id", user.id).gt("created_at", lastSeen)
           if (rCount) nCount += rCount
         }
-        setNotifCount(nCount)
+        
+        if (isMounted) setNotifCount(nCount)
       }
     }
+    
     checkData()
+    const interval = setInterval(checkData, 15000)
+
+    return () => {
+      isMounted = false
+      clearInterval(interval)
+    }
   }, [pathname])
 
   return (
@@ -149,9 +160,11 @@ export function MobileNav({ unreadCount: initialCount = 0 }: { unreadCount?: num
   const supabase = createClient()
 
   useEffect(() => {
+    let isMounted = true
+
     async function checkData() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
+      if (!user || !isMounted) return
       
       const { data: unreadConvos } = await supabase
         .from("conversations")
@@ -160,6 +173,7 @@ export function MobileNav({ unreadCount: initialCount = 0 }: { unreadCount?: num
         .eq("messages.is_read", false)
         .neq("messages.sender_id", user.id)
         
+      if (!isMounted) return
       const uCount = unreadConvos?.reduce((acc, c) => acc + (Array.isArray(c.messages) ? c.messages.length : 0), 0) || 0
       setUnreadCount(uCount)
 
@@ -185,10 +199,18 @@ export function MobileNav({ unreadCount: initialCount = 0 }: { unreadCount?: num
           const { count: rCount } = await supabase.from("posts").select("id", { count: "exact", head: true }).in("parent_id", myPosts.map(p => p.id)).neq("user_id", user.id).gt("created_at", lastSeen)
           if (rCount) nCount += rCount
         }
-        setNotifCount(nCount)
+        
+        if (isMounted) setNotifCount(nCount)
       }
     }
+    
     checkData()
+    const interval = setInterval(checkData, 15000)
+
+    return () => {
+      isMounted = false
+      clearInterval(interval)
+    }
   }, [pathname])
 
   return (
