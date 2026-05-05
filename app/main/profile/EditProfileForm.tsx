@@ -54,8 +54,10 @@ export default function EditProfileForm({
       }
 
       const { data: { publicUrl } } = supabase.storage.from("avatars").getPublicUrl(path)
-      avatarUrl = publicUrl // simpan URL bersih ke DB
-      setAvatarPreview(publicUrl + `?t=${Date.now()}`) // bust cache hanya untuk preview
+      // Simpan URL dengan cache buster (?v=timestamp) ke DB agar CDN Vercel & browser 
+      // tidak menampilkan gambar lama (cached) saat foto diganti
+      avatarUrl = `${publicUrl}?v=${Date.now()}`
+      setAvatarPreview(avatarUrl)
     }
 
     // Cek apakah username sudah dipakai (kalau berubah)
