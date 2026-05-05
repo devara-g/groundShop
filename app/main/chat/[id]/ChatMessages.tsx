@@ -138,7 +138,7 @@ export default function ChatMessages({ conversationId, initialMessages, currentU
                 {isMine && (
                   <button
                     onClick={() => handleDelete(msg.id)}
-                    className="absolute top-1/2 -translate-y-1/2 -left-10 w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm hover:bg-red-100 z-10"
+                    className="absolute top-1/2 -translate-y-1/2 -left-10 w-8 h-8 rounded-full bg-red-50 text-red-500 flex items-center justify-center opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity shadow-sm hover:bg-red-100 z-10"
                     title="Hapus pesan"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
