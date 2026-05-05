@@ -74,61 +74,62 @@ export default async function ProfilePage() {
           </button>
         </div>
 
-        <div className="px-5 pt-6 pb-6">
-          {/* Top Section: Avatar & Stats */}
-          <div className="flex items-center gap-6 md:gap-10">
-            {/* Avatar with IG-like ring */}
-            <div className="shrink-0 relative group cursor-pointer">
-              <div className="w-20 h-20 md:w-28 md:h-28 rounded-full p-1 bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-500 shadow-sm transition-transform group-hover:scale-105 duration-300">
-                <div className="w-full h-full bg-white rounded-full p-0.5">
-                  {profile?.avatar_url ? (
-                    <img
-                      src={profile.avatar_url}
-                      alt={profile.username || "avatar"}
-                      className="w-full h-full rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className={`w-full h-full bg-gradient-to-br ${gradient} rounded-full flex items-center justify-center text-white font-black text-3xl`}>
-                      {profile?.username?.[0]?.toUpperCase()}
-                    </div>
-                  )}
-                </div>
+        <div className="px-5 pt-8 pb-6 flex flex-col items-center text-center">
+          {/* Centered Avatar */}
+          <div className="relative group cursor-pointer mb-4">
+            <div className="w-24 h-24 md:w-32 md:h-32 rounded-full p-1 bg-white shadow-md border border-slate-100 transition-transform group-hover:scale-105 duration-300">
+              <div className="w-full h-full rounded-full overflow-hidden bg-slate-50">
+                {profile?.avatar_url ? (
+                  <img
+                    src={profile.avatar_url}
+                    alt={profile.username || "avatar"}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <div className={`w-full h-full bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-black text-4xl`}>
+                    {profile?.username?.[0]?.toUpperCase()}
+                  </div>
+                )}
               </div>
             </div>
-
-            {/* Stats */}
-            <div className="flex-1 flex justify-around md:justify-start md:gap-12 text-center">
-              <div className="flex flex-col items-center">
-                <span className="block text-xl font-black text-slate-900">{posts.length}</span>
-                <span className="text-[13px] font-medium text-slate-500">kiriman</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="block text-xl font-black text-slate-900">{friendCount || 0}</span>
-                <span className="text-[13px] font-medium text-slate-500">teman</span>
-              </div>
-              <div className="flex flex-col items-center">
-                <span className="block text-xl font-black text-slate-900">{likedIds.size}</span>
-                <span className="text-[13px] font-medium text-slate-500">suka</span>
-              </div>
-            </div>
+            {/* Online badge */}
+            <div className="absolute bottom-1 right-2 w-5 h-5 bg-green-500 border-4 border-white rounded-full"></div>
           </div>
 
-          {/* Bio Section */}
-          <div className="mt-5 px-1">
-            <p className="font-bold text-[15px] text-slate-900">{profile?.username}</p>
-            <p className="text-[14px] text-slate-500 mt-0.5">Toko Aktif</p>
-            <p className="text-[14px] text-slate-700 mt-1 leading-relaxed">
-              Selamat datang di profil saya! Hubungi saya untuk informasi produk lebih lanjut.
-            </p>
+          {/* Name & Bio */}
+          <h2 className="text-2xl font-black text-slate-900 tracking-tight">{profile?.username}</h2>
+          <div className="flex items-center justify-center gap-2 mt-1 mb-3">
+            <span className="px-2.5 py-0.5 bg-blue-50 text-blue-600 text-[12px] font-bold rounded-full">Toko Aktif</span>
+            <span className="text-slate-400 text-sm">•</span>
+            <span className="text-slate-500 text-sm">Bergabung 2026</span>
+          </div>
+          <p className="text-[15px] text-slate-600 max-w-md leading-relaxed px-4">
+            Selamat datang di profil saya! Hubungi saya untuk informasi produk lebih lanjut. Kepuasan pelanggan adalah prioritas kami.
+          </p>
+
+          {/* Stats Box */}
+          <div className="flex items-center justify-center w-full max-w-md gap-4 mt-6">
+            <div className="flex-1 bg-slate-50 border border-slate-100 py-3 rounded-2xl">
+              <span className="block text-xl font-black text-slate-900">{posts.length}</span>
+              <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Postingan</span>
+            </div>
+            <div className="flex-1 bg-slate-50 border border-slate-100 py-3 rounded-2xl">
+              <span className="block text-xl font-black text-slate-900">{friendCount || 0}</span>
+              <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Teman</span>
+            </div>
+            <div className="flex-1 bg-slate-50 border border-slate-100 py-3 rounded-2xl">
+              <span className="block text-xl font-black text-slate-900">{likedIds.size}</span>
+              <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Suka</span>
+            </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="mt-5 flex gap-2">
+          <div className="mt-8 flex gap-3 w-full max-w-md">
             <div className="flex-1">
               <EditProfileForm currentUsername={profile?.username || ""} currentAvatarUrl={profile?.avatar_url} />
             </div>
-            <button className="flex-1 px-4 py-1.5 bg-slate-100 text-slate-900 font-bold rounded-xl hover:bg-slate-200 transition-colors text-[14px]">
-              Bagikan profil
+            <button className="flex-1 px-4 py-2 bg-white border-2 border-slate-200 text-slate-700 font-bold rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all text-[14px]">
+              Bagikan Profil
             </button>
           </div>
         </div>
