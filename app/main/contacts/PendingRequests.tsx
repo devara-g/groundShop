@@ -48,25 +48,27 @@ export default function PendingRequests({
       </div>
       <div className="space-y-3">
         {visible.map((req) => (
-          <div key={req.id} className="flex items-center justify-between p-4 bg-white border border-slate-50 hover:border-orange-200 hover:shadow-md rounded-2xl transition-all group">
-            <div className="flex items-center gap-4">
-              {req.requester?.avatar_url ? (
-                <img
-                  src={req.requester.avatar_url}
-                  alt={req.requester.username}
-                  className="w-12 h-12 rounded-xl object-cover shadow-inner"
-                />
-              ) : (
-                <div className={`w-12 h-12 ${getColor(req.requester?.username || "a")} rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-inner`}>
-                  {req.requester?.username?.[0]?.toUpperCase() || "?"}
-                </div>
-              )}
-              <div>
-                <p className="font-bold text-slate-800">{req.requester?.username}</p>
-                <p className="text-xs text-slate-500">Ingin berteman</p>
+          <div key={req.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-white border border-slate-50 hover:border-orange-200 hover:shadow-md rounded-2xl transition-all group gap-3 sm:gap-0">
+            <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+              <div className="shrink-0">
+                {req.requester?.avatar_url ? (
+                  <img
+                    src={req.requester.avatar_url}
+                    alt={req.requester.username}
+                    className="w-12 h-12 rounded-xl object-cover shadow-inner"
+                  />
+                ) : (
+                  <div className={`w-12 h-12 ${getColor(req.requester?.username || "a")} rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-inner`}>
+                    {req.requester?.username?.[0]?.toUpperCase() || "?"}
+                  </div>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-slate-800 truncate">{req.requester?.username}</p>
+                <p className="text-xs text-slate-500 truncate">Ingin berteman</p>
               </div>
             </div>
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-row sm:flex-col gap-2 shrink-0 justify-end mt-1 sm:mt-0">
               <button onClick={() => handleAccept(req.id)}
                 className="bg-blue-600 text-white px-4 py-1.5 rounded-full text-xs font-bold hover:bg-blue-700 transition shadow-sm">
                 Terima

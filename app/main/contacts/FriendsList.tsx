@@ -85,9 +85,9 @@ export default function FriendsList({ friends, currentUserId }: { friends: Frien
 
             return (
               <div key={friendship.id}
-                className="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-slate-50 hover:border-blue-100 hover:shadow-md transition-all group">
-                <div className="flex items-center gap-4">
-                  <div className="relative">
+                className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-white rounded-2xl shadow-sm border border-slate-50 hover:border-blue-100 hover:shadow-md transition-all group gap-3 sm:gap-0">
+                <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+                  <div className="relative shrink-0">
                     {friend.avatar_url ? (
                       <img
                         src={friend.avatar_url}
@@ -101,13 +101,13 @@ export default function FriendsList({ friends, currentUserId }: { friends: Frien
                     )}
                     <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
                   </div>
-                  <div>
-                    <p className="font-bold text-slate-800">{friend.username}</p>
-                    <p className="text-xs text-slate-400 font-medium">@{friend.username}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-bold text-slate-800 truncate">{friend.username}</p>
+                    <p className="text-xs text-slate-400 font-medium truncate">@{friend.username}</p>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0 justify-end sm:justify-start">
                   <button
                     onClick={() => handleStartChat(friend.id)}
                     disabled={starting === friend.id}

@@ -64,8 +64,9 @@ export default function SearchUser({ currentUserId }: { currentUserId: string })
       {results.length > 0 && (
         <div className="mt-4 space-y-3">
           {results.map((user) => (
-            <div key={user.id} className="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-slate-50 hover:border-blue-100 hover:shadow-md transition-all group">
-              <div className="flex items-center gap-4">
+            <div key={user.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 sm:p-4 bg-white rounded-2xl shadow-sm border border-slate-50 hover:border-blue-100 hover:shadow-md transition-all group gap-3 sm:gap-0">
+              <div className="flex items-center gap-3 sm:gap-4 flex-1 min-w-0">
+              <div className="shrink-0">
                 {user.avatar_url ? (
                   <img
                     src={user.avatar_url}
@@ -77,11 +78,13 @@ export default function SearchUser({ currentUserId }: { currentUserId: string })
                     {user.username?.[0]?.toUpperCase()}
                   </div>
                 )}
-                <div>
-                  <p className="font-bold text-slate-800">{user.username}</p>
-                  <p className="text-xs text-slate-400 font-medium">@{user.username}</p>
+              </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-slate-800 truncate">{user.username}</p>
+                  <p className="text-xs text-slate-400 font-medium truncate">@{user.username}</p>
                 </div>
               </div>
+              <div className="shrink-0 flex justify-end">
               {sent.has(user.id) ? (
                 <span className="text-xs text-slate-500 bg-slate-100 px-4 py-2 rounded-full font-bold">Terkirim ✓</span>
               ) : (
@@ -90,6 +93,7 @@ export default function SearchUser({ currentUserId }: { currentUserId: string })
                   + Tambah
                 </button>
               )}
+              </div>
             </div>
           ))}
         </div>
