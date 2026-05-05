@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation"
 import { useState, useEffect, useRef } from "react"
 import PostForm from "./postform"
 import AddFriendButton from "@/app/main/contacts/AddFriendButton"
+import Image from "next/image"
 
 type Profile = { id: string; username: string; avatar_url: string | null }
 type Post = {
@@ -83,9 +84,17 @@ function UserPopover({ profile, currentUserId, onClose }: {
       {/* Banner */}
       <div className={`h-12 ${color} opacity-20`} />
       <div className="px-4 pb-4 -mt-6">
-        <div className={`w-12 h-12 ${color} rounded-full flex items-center justify-center text-white font-bold text-lg border-2 border-white`}>
-          {profile.username[0].toUpperCase()}
-        </div>
+        {profile.avatar_url ? (
+          <img
+            src={profile.avatar_url}
+            alt={profile.username}
+            className="w-12 h-12 rounded-full object-cover border-2 border-white"
+          />
+        ) : (
+          <div className={`w-12 h-12 ${color} rounded-full flex items-center justify-center text-white font-bold text-lg border-2 border-white`}>
+            {profile.username[0].toUpperCase()}
+          </div>
+        )}
         <p className="font-bold mt-2 text-sm">{profile.username}</p>
         <p className="text-xs text-gray-400">@{profile.username}</p>
 
@@ -165,8 +174,12 @@ export default function PostCard({ post, isReply = false, rootId }: {
         <div className="relative shrink-0">
           <button
             onClick={() => setShowPopover(!showPopover)}
-            className={`w-12 h-12 ${color} rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-inner hover:opacity-90 hover:scale-105 transition-all`}>
-            {post.profiles?.username?.[0]?.toUpperCase() || "?"}
+            className={`w-12 h-12 ${post.profiles?.avatar_url ? 'bg-transparent' : color} rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-inner hover:opacity-90 hover:scale-105 transition-all overflow-hidden`}>
+            {post.profiles?.avatar_url ? (
+              <img src={post.profiles.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+            ) : (
+              post.profiles?.username?.[0]?.toUpperCase() || "?"
+            )}
           </button>
           {showPopover && post.profiles && (
             <UserPopover
@@ -199,6 +212,17 @@ export default function PostCard({ post, isReply = false, rootId }: {
           </div>
 
           <RenderContent text={post.content} />
+
+          {/* Gambar Postingan */}
+          {post.image_url && (
+            <div className="mt-3 rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
+              <img
+                src={post.image_url}
+                alt="Gambar postingan"
+                className="w-full max-h-96 object-cover"
+              />
+            </div>
+          )}
 
           {/* Actions */}
           <div className="mt-4 flex items-center gap-6 text-slate-400 text-sm font-medium">

@@ -15,17 +15,17 @@ export default async function MainLayout({ children }: { children: React.ReactNo
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect("/auth/login")
 
-  const { data: profile } = await supabase.from("profiles").select("username").eq("id", user.id).single()
+  const { data: profile } = await supabase.from("profiles").select("username, avatar_url").eq("id", user.id).single()
 
   return (
     <div className="flex h-screen bg-[#F8FAFC]">
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-72 bg-white/70 backdrop-blur-xl border-r border-slate-100 p-6">
-        <div className="flex items-center gap-3 mb-10 px-2">
-          <div className="w-10 h-10 bg-gradient-to-tr from-blue-600 to-indigo-500 rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-500/30">
+        <div className="flex items-center gap-3 mb-10 px-2 mt-4">
+          <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-xl">
             M
           </div>
-          <h2 className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-slate-500 tracking-tight">
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
             My Olshop
           </h2>
         </div>
@@ -34,8 +34,8 @@ export default async function MainLayout({ children }: { children: React.ReactNo
           {NAV_ITEMS.map((item) => (
             <Link key={item.href} href={item.href} 
               className="flex items-center gap-4 px-4 py-3.5 rounded-2xl text-slate-500 hover:text-slate-900 hover:bg-slate-50 transition-all group font-medium">
-              <span className="text-xl group-hover:scale-110 transition-transform">{item.icon}</span>
-              {item.label}
+              <span className="text-2xl group-hover:scale-105 transition-transform">{item.icon}</span>
+              <span className="mt-0.5">{item.label}</span>
             </Link>
           ))}
         </nav>
@@ -43,9 +43,13 @@ export default async function MainLayout({ children }: { children: React.ReactNo
         {/* User Card */}
         <div className="mt-auto bg-slate-50 rounded-2xl p-4 border border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center font-bold text-slate-600">
-              {profile?.username?.[0]?.toUpperCase() || "?"}
-            </div>
+            {profile?.avatar_url ? (
+              <img src={profile.avatar_url} alt={profile.username} className="w-10 h-10 rounded-full object-cover shadow-sm" />
+            ) : (
+              <div className="w-10 h-10 bg-slate-200 rounded-full flex items-center justify-center font-bold text-slate-600">
+                {profile?.username?.[0]?.toUpperCase() || "?"}
+              </div>
+            )}
             <div className="overflow-hidden">
               <p className="font-bold text-sm truncate">{profile?.username}</p>
               <p className="text-xs text-slate-400">Online</p>
@@ -62,11 +66,9 @@ export default async function MainLayout({ children }: { children: React.ReactNo
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-hidden flex flex-col relative w-full pb-16 md:pb-0">
-        <div className="flex-1 overflow-y-auto w-full max-w-4xl mx-auto md:p-4">
-          <div className="bg-white md:rounded-3xl shadow-sm border-x border-b md:border-t border-slate-100 min-h-full overflow-hidden flex flex-col">
-            {children}
-          </div>
+      <main className="flex-1 overflow-hidden flex flex-col relative w-full pb-16 md:pb-0 bg-white">
+        <div className="flex-1 h-full w-full max-w-4xl mx-auto overflow-hidden flex flex-col">
+          {children}
         </div>
       </main>
 

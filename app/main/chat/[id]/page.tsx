@@ -56,8 +56,18 @@ export default async function ChatRoomPage(props: { params: Promise<{ id: string
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
           </svg>
         </Link>
-        <div className={`w-12 h-12 ${getColor(other?.username || "a")} rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-inner relative`}>
-          {other?.username?.[0]?.toUpperCase() || "?"}
+        <div className="relative">
+          {other?.avatar_url ? (
+            <img
+              src={other.avatar_url}
+              alt={other.username}
+              className="w-12 h-12 rounded-2xl object-cover shadow-inner relative"
+            />
+          ) : (
+            <div className={`w-12 h-12 ${getColor(other?.username || "a")} rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-inner relative`}>
+              {other?.username?.[0]?.toUpperCase() || "?"}
+            </div>
+          )}
           <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
         </div>
         <div>

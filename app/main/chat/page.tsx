@@ -48,13 +48,15 @@ export default async function ChatPage() {
   })
 
   return (
-    <div className="flex flex-col h-full bg-white md:rounded-3xl w-full">
-      <div className="px-6 py-8 border-b border-slate-100 bg-white/80 backdrop-blur-md sticky top-0 z-20">
-        <h1 className="text-3xl font-black text-slate-800 tracking-tight mb-2">Pesan <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-500">Langsung</span></h1>
-        <p className="text-slate-500">Mulai obrolan dengan temanmu.</p>
+    <div className="flex flex-col h-full bg-white w-full border-x border-slate-100/50">
+      <div className="px-6 py-4 border-b border-slate-100 bg-white/90 backdrop-blur-md sticky top-0 z-20 flex justify-between items-center">
+        <h1 className="text-xl font-bold text-slate-900 tracking-tight">Pesan</h1>
+        <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-slate-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+        </svg>
       </div>
 
-      <div className="flex-1 w-full max-w-4xl mx-auto md:p-6 overflow-y-auto">
+      <div className="flex-1 w-full max-w-2xl mx-auto overflow-y-auto hide-scrollbar">
         {convos.length === 0 ? (
           <div className="text-center py-20">
             <div className="w-24 h-24 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -67,13 +69,21 @@ export default async function ChatPage() {
           <div className="space-y-3 p-4 md:p-0">
             {convos.map((c) => (
               <Link key={c.id} href={`/main/chat/${c.id}`}
-                className="flex items-center gap-4 p-4 bg-white rounded-2xl border border-slate-50 hover:border-blue-100 shadow-sm hover:shadow-md transition-all group">
+                className="flex items-center gap-4 px-6 py-4 bg-white hover:bg-slate-50 transition-colors group">
                 
                 {/* Avatar */}
                 <div className="relative shrink-0">
-                  <div className={`w-14 h-14 ${getColor(c.other?.username || "a")} rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-inner`}>
-                    {c.other?.username?.[0]?.toUpperCase() || "?"}
-                  </div>
+                  {c.other?.avatar_url ? (
+                    <img
+                      src={c.other.avatar_url}
+                      alt={c.other.username}
+                      className="w-14 h-14 rounded-2xl object-cover shadow-inner"
+                    />
+                  ) : (
+                    <div className={`w-14 h-14 ${getColor(c.other?.username || "a")} rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-inner`}>
+                      {c.other?.username?.[0]?.toUpperCase() || "?"}
+                    </div>
+                  )}
                   {c.unread > 0 && (
                     <span className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center shadow-md shadow-red-500/30 border-2 border-white">
                       {c.unread > 9 ? "9+" : c.unread}

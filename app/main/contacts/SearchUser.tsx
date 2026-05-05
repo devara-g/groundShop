@@ -66,9 +66,17 @@ export default function SearchUser({ currentUserId }: { currentUserId: string })
           {results.map((user) => (
             <div key={user.id} className="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-slate-50 hover:border-blue-100 hover:shadow-md transition-all group">
               <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 ${getColor(user.username || "a")} rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-inner`}>
-                  {user.username?.[0]?.toUpperCase()}
-                </div>
+                {user.avatar_url ? (
+                  <img
+                    src={user.avatar_url}
+                    alt={user.username}
+                    className="w-12 h-12 rounded-xl object-cover shadow-inner"
+                  />
+                ) : (
+                  <div className={`w-12 h-12 ${getColor(user.username || "a")} rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-inner`}>
+                    {user.username?.[0]?.toUpperCase()}
+                  </div>
+                )}
                 <div>
                   <p className="font-bold text-slate-800">{user.username}</p>
                   <p className="text-xs text-slate-400 font-medium">@{user.username}</p>

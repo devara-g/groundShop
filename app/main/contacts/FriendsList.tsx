@@ -87,8 +87,18 @@ export default function FriendsList({ friends, currentUserId }: { friends: Frien
               <div key={friendship.id}
                 className="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm border border-slate-50 hover:border-blue-100 hover:shadow-md transition-all group">
                 <div className="flex items-center gap-4">
-                  <div className={`w-12 h-12 ${getColor(friend.username)} rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-inner relative`}>
-                    {friend.username[0].toUpperCase()}
+                  <div className="relative">
+                    {friend.avatar_url ? (
+                      <img
+                        src={friend.avatar_url}
+                        alt={friend.username}
+                        className="w-12 h-12 rounded-xl object-cover shadow-inner relative"
+                      />
+                    ) : (
+                      <div className={`w-12 h-12 ${getColor(friend.username)} rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-inner relative`}>
+                        {friend.username[0].toUpperCase()}
+                      </div>
+                    )}
                     <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
                   </div>
                   <div>

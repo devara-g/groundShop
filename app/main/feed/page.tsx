@@ -49,11 +49,11 @@ export default async function FeedPage() {
   }))
 
   return (
-    <div className="flex flex-col h-full bg-white md:rounded-3xl w-full">
-      <div className="px-6 py-6 border-b border-slate-100 bg-white/80 backdrop-blur-md sticky top-0 z-20">
-        <h1 className="text-3xl font-black text-slate-800 tracking-tight">Jelajah <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-500">Feed</span></h1>
+    <div className="flex flex-col h-full bg-white w-full border-x border-slate-100/50">
+      <div className="px-6 py-4 border-b border-slate-100 bg-white/90 backdrop-blur-md sticky top-0 z-20 flex justify-between items-center">
+        <h1 className="text-xl font-bold text-slate-900 tracking-tight">Jelajahi</h1>
       </div>
-      <div className="flex-1 w-full max-w-3xl mx-auto overflow-y-auto pb-20">
+      <div className="flex-1 w-full max-w-2xl mx-auto overflow-y-auto pb-20 hide-scrollbar">
         <PostForm />
         <div className="mt-4">
           <PostList posts={posts as any} />

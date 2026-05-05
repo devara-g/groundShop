@@ -29,14 +29,13 @@ export default async function ContactsPage() {
   ])
 
   return (
-    <div className="flex flex-col h-full bg-white md:rounded-3xl w-full">
+    <div className="flex flex-col h-full bg-white w-full border-x border-slate-100/50">
       {/* Header */}
-      <div className="px-6 py-8 border-b border-slate-100 bg-white/80 backdrop-blur-md sticky top-0 z-20">
-        <h1 className="text-3xl font-black text-slate-800 tracking-tight mb-2">Jejaring <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-500">Teman</span></h1>
-        <p className="text-slate-500">Temukan, tambah, dan kelola semua kontakmu di sini.</p>
+      <div className="px-6 py-4 border-b border-slate-100 bg-white/90 backdrop-blur-md sticky top-0 z-20 flex justify-between items-center">
+        <h1 className="text-xl font-bold text-slate-900 tracking-tight">Teman</h1>
       </div>
 
-      <div className="p-6 md:p-8 flex flex-col md:flex-row gap-8 w-full max-w-6xl mx-auto">
+      <div className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col md:flex-row gap-8 w-full max-w-6xl mx-auto pb-20">
         {/* Left Column: Search & Pending */}
         <div className="flex-1 flex flex-col gap-8">
           <div className="bg-slate-50 p-6 rounded-3xl border border-slate-100">

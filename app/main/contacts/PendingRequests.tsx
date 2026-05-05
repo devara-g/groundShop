@@ -50,9 +50,17 @@ export default function PendingRequests({
         {visible.map((req) => (
           <div key={req.id} className="flex items-center justify-between p-4 bg-white border border-slate-50 hover:border-orange-200 hover:shadow-md rounded-2xl transition-all group">
             <div className="flex items-center gap-4">
-              <div className={`w-12 h-12 ${getColor(req.requester?.username || "a")} rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-inner`}>
-                {req.requester?.username?.[0]?.toUpperCase() || "?"}
-              </div>
+              {req.requester?.avatar_url ? (
+                <img
+                  src={req.requester.avatar_url}
+                  alt={req.requester.username}
+                  className="w-12 h-12 rounded-xl object-cover shadow-inner"
+                />
+              ) : (
+                <div className={`w-12 h-12 ${getColor(req.requester?.username || "a")} rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-inner`}>
+                  {req.requester?.username?.[0]?.toUpperCase() || "?"}
+                </div>
+              )}
               <div>
                 <p className="font-bold text-slate-800">{req.requester?.username}</p>
                 <p className="text-xs text-slate-500">Ingin berteman</p>

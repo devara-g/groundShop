@@ -80,7 +80,10 @@ export default function ChatMessages({ conversationId, initialMessages, currentU
   let lastDate = ""
 
   return (
-    <div className="flex-1 overflow-y-auto px-4 md:px-6 py-6 space-y-2">
+    <div className="flex-1 overflow-y-auto px-4 md:px-6 py-6 flex flex-col">
+      {/* Spacer — mendorong pesan ke bawah */}
+      <div className="flex-1" />
+      <div className="space-y-2">
       {messages.length === 0 && (
         <div className="text-center py-20">
           <div className="w-20 h-20 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -129,6 +132,7 @@ export default function ChatMessages({ conversationId, initialMessages, currentU
         )
       })}
       <div ref={bottomRef} className="h-2" />
+      </div>
     </div>
   )
 }
