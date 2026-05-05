@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
 
 export default function MessageInput({ conversationId, currentUserId }: {
@@ -11,9 +11,19 @@ export default function MessageInput({ conversationId, currentUserId }: {
   const [sending, setSending] = useState(false)
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
+  const [replyTo, setReplyTo] = useState<{ id: string; content: string; sender_id: string } | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const fileRef = useRef<HTMLInputElement>(null)
   const supabase = createClient()
+
+  useEffect(() => {
+    const handleReply = (e: any) => {
+      setReplyTo(e.detail)
+      inputRef.current?.focus()
+    }
+    window.addEventListener("setReplyTo", handleReply)
+    return () => window.removeEventListener("setReplyTo", handleReply)
+  }, [])
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -49,6 +59,10 @@ export default function MessageInput({ conversationId, currentUserId }: {
       }
     }
 
+    if (replyTo) {
+      finalContent = `[reply:${replyTo.id}]\n${finalContent}`
+    }
+
     await supabase.from("messages").insert({
       conversation_id: conversationId,
       sender_id: currentUserId,
@@ -57,6 +71,7 @@ export default function MessageInput({ conversationId, currentUserId }: {
 
     setContent("")
     removeImage()
+    setReplyTo(null)
     setSending(false)
     inputRef.current?.focus()
   }
@@ -64,6 +79,28 @@ export default function MessageInput({ conversationId, currentUserId }: {
   return (
     <div className="p-3 md:p-4 bg-white/90 backdrop-blur-md border-t border-slate-100 sticky bottom-0 z-10">
       <div className="max-w-4xl mx-auto flex flex-col">
+        {/* Preview Balasan */}
+        {replyTo && (
+          <div className="mb-2 relative inline-flex items-center w-full max-w-sm bg-slate-100/80 p-3 rounded-xl border-l-4 border-blue-500 shadow-sm animate-in slide-in-from-bottom-2">
+            <div className="flex-1 min-w-0">
+              <p className="text-[12px] font-bold text-blue-600 mb-0.5">{replyTo.sender_id === currentUserId ? "Membalas pesan Anda" : "Membalas pesan"}</p>
+              <p className="text-sm text-slate-600 truncate">
+                {(() => {
+                  let text = replyTo.content.replace(/^\[reply:.+?\]\n?/g, "")
+                  const hasImg = text.match(/^\[image:.+?\]/)
+                  text = text.replace(/^\[image:.+?\]\n?/g, "").trim()
+                  return hasImg ? (text ? `📷 ${text}` : "📷 Gambar") : text
+                })()}
+              </p>
+            </div>
+            <button type="button" onClick={() => setReplyTo(null)} className="ml-3 p-1.5 text-slate-400 hover:text-slate-600 bg-slate-200/50 hover:bg-slate-200 rounded-full transition-colors shrink-0">
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        )}
+
         {imagePreview && (
           <div className="mb-3 relative inline-block self-start">
             <img src={imagePreview} className="h-32 w-auto rounded-xl border border-slate-200 shadow-sm object-cover" alt="preview" />

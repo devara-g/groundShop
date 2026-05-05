@@ -13,6 +13,16 @@ function timeAgo(date: string) {
   return new Date(date).toLocaleDateString("id-ID", { day: "numeric", month: "short" })
 }
 
+function formatMessagePreview(content: string) {
+  let text = content.replace(/^\[reply:.+?\]\n?/g, "")
+  const hasImage = text.match(/^\[image:.+?\]/)
+  text = text.replace(/^\[image:.+?\]\n?/g, "").trim()
+  
+  if (hasImage && !text) return "📷 Mengirim gambar"
+  if (hasImage && text) return `📷 ${text}`
+  return text || "Pesan"
+}
+
 export default async function ChatPage() {
   const supabase = await createServerSupabase()
   const { data: { user } } = await supabase.auth.getUser()
@@ -100,7 +110,7 @@ export default async function ChatPage() {
                   </div>
                   <p className={`text-sm truncate ${c.unread > 0 ? "font-bold text-slate-800" : "text-slate-500"}`}>
                     {c.lastMsg
-                      ? (c.lastMsg.sender_id === user.id ? `Kamu: ${c.lastMsg.content}` : c.lastMsg.content)
+                      ? (c.lastMsg.sender_id === user.id ? `Kamu: ${formatMessagePreview(c.lastMsg.content)}` : formatMessagePreview(c.lastMsg.content))
                       : "Mulai percakapan..."}
                   </p>
                 </div>
