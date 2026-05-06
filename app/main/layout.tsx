@@ -1,6 +1,8 @@
 import { createServerSupabase } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
+import logoImg from "@/img/ChatGPT Image May 6, 2026, 05_48_53 PM.png"
 import { DesktopNav, MobileNav } from "./NavClient"
 
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
@@ -24,13 +26,11 @@ export default async function MainLayout({ children }: { children: React.ReactNo
       {/* Desktop Sidebar */}
       <aside className="hidden md:flex flex-col w-72 bg-white/70 backdrop-blur-xl border-r border-slate-100 p-6">
         <div className="flex items-center gap-3 mb-10 px-2 mt-4">
-          <div className="w-10 h-10 bg-linear-to-tr from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white shadow-md shadow-blue-500/20">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6">
-              <path fillRule="evenodd" d="M7.5 6v.75H5.513c-.96 0-1.764.724-1.865 1.679l-1.263 12A1.875 1.875 0 004.25 22.5h15.5a1.875 1.875 0 001.865-2.071l-1.263-12a1.875 1.875 0 00-1.865-1.679H16.5V6a4.5 4.5 0 10-9 0zM12 3a3 3 0 00-3 3v.75h6V6a3 3 0 00-3-3zm-3 8.25a3 3 0 106 0v-.75a.75.75 0 011.5 0v.75a4.5 4.5 0 11-9 0v-.75a.75.75 0 011.5 0v.75z" clipRule="evenodd" />
-            </svg>
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden shadow-md border border-slate-100">
+            <Image src={logoImg} alt="LapakSapa Logo" className="w-full h-full object-cover" />
           </div>
           <h2 className="text-xl font-bold text-slate-900 tracking-tight">
-            dapshop
+            LapakSapa
           </h2>
         </div>
         
