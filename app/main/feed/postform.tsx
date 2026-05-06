@@ -123,7 +123,7 @@ export default function PostForm({
     <form onSubmit={handleSubmit} className={compact ? "mt-4" : "p-6 bg-white border-b border-slate-100"}>
       <div className="flex gap-4">
         {!compact && (
-          <div className="w-12 h-12 bg-gradient-to-tr from-slate-200 to-slate-100 rounded-full flex items-center justify-center text-slate-400 font-bold text-lg shadow-inner shrink-0">
+          <div className="w-12 h-12 bg-linear-to-tr from-slate-200 to-slate-100 rounded-full flex items-center justify-center text-slate-400 font-bold text-lg shadow-inner shrink-0">
             ?
           </div>
         )}
@@ -151,7 +151,7 @@ export default function PostForm({
                   {u.avatar_url ? (
                     <img src={u.avatar_url} alt={u.username} className="w-8 h-8 rounded-full object-cover shadow-sm" />
                   ) : (
-                    <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
+                    <div className="w-8 h-8 bg-linear-to-br from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white text-xs font-bold shadow-sm">
                       {u.username[0].toUpperCase()}
                     </div>
                   )}
@@ -218,7 +218,7 @@ export default function PostForm({
               <button
                 type="submit"
                 disabled={loading || (!content.trim() && !imageFile) || content.length > 280}
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-full text-sm font-bold hover:shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0 transition-all"
+                className="bg-linear-to-r from-blue-600 to-indigo-600 text-white px-6 py-2 rounded-full text-sm font-bold hover:shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0 transition-all"
               >
                 {loading ? "..." : parentId ? "Balas" : "Posting"}
               </button>

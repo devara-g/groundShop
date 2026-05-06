@@ -56,7 +56,7 @@ export default function SearchUser({ currentUserId }: { currentUserId: string })
           />
         </div>
         <button onClick={handleSearch} disabled={loading}
-          className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-2xl text-sm font-bold hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 transition-all">
+          className="bg-linear-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-2xl text-sm font-bold hover:shadow-lg hover:-translate-y-0.5 disabled:opacity-50 transition-all">
           {loading ? "..." : "Cari"}
         </button>
       </div>

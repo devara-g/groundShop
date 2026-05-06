@@ -111,7 +111,7 @@ export default function FriendsList({ friends, currentUserId }: { friends: Frien
                   <button
                     onClick={() => handleStartChat(friend.id)}
                     disabled={starting === friend.id}
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-full text-xs font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-50"
+                    className="bg-linear-to-r from-blue-600 to-indigo-600 text-white px-4 py-2 rounded-full text-xs font-bold hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-50"
                   >
                     {starting === friend.id ? "..." : "💬 Chat"}
                   </button>

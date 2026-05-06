@@ -23,7 +23,7 @@ function RenderContent({ text }: { text: string }) {
   // Pecah berdasarkan @[nama berspasi] ATAU @nama_biasa
   const parts = text.split(/(@\[[^\]]+\]|@\w+)/g)
   return (
-    <p className="mt-1.5 text-[15px] text-slate-700 leading-relaxed whitespace-pre-wrap break-words">
+    <p className="mt-1.5 text-[15px] text-slate-700 leading-relaxed whitespace-pre-wrap">
       {parts.map((part, i) => {
         if (part.startsWith("@[")) {
           const name = part.slice(2, -1)
@@ -81,7 +81,7 @@ function UserPopover({ profile, currentUserId, onClose }: {
         `and(requester_id.eq.${profile.id},addressee_id.eq.${currentUserId})`
       )
       .single()
-      .then(({ data }) => {
+      .then(({ data }: { data: any }) => {
         if (!data) setFriendStatus("none")
         else if (data.status === "accepted") setFriendStatus("friends")
         else if (data.requester_id === currentUserId) setFriendStatus("pending_sent")
@@ -132,22 +132,33 @@ function UserPopover({ profile, currentUserId, onClose }: {
   )
 }
 
-export default function PostCard({ post, isReply = false, rootId }: {
-  post: Post; isReply?: boolean; rootId?: string
+let cachedUserPromise: Promise<string | null> | null = null;
+const fetchCurrentUserId = (supabase: any): Promise<string | null> => {
+  if (!cachedUserPromise) {
+    cachedUserPromise = supabase.auth.getUser().then(({ data }: { data: any }) => data.user?.id || null);
+  }
+  return cachedUserPromise!;
+};
+
+export default function PostCard({ post, isReply = false, rootId, isLastReply = false }: {
+  post: Post; isReply?: boolean; rootId?: string; isLastReply?: boolean
 }) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [showReplyForm, setShowReplyForm] = useState(false)
-  const [showPopover, setShowPopover] = useState(false)
+  const [showImageModal, setShowImageModal] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [liked, setLiked] = useState(post.is_liked ?? false)
   const [likeCount, setLikeCount] = useState(post.like_count ?? 0)
   const [bookmarked, setBookmarked] = useState(post.is_bookmarked ?? false)
   const [showReplies, setShowReplies] = useState(false)
+  const [showPopover, setShowPopover] = useState(false)
+  const [reposted, setReposted] = useState(false)
+  const popoverTimeout = useRef<NodeJS.Timeout | null>(null)
   const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setCurrentUserId(data.user?.id || null))
+    fetchCurrentUserId(supabase).then(id => setCurrentUserId(id))
   }, [])
 
   const handleLike = async () => {
@@ -180,93 +191,182 @@ export default function PostCard({ post, isReply = false, rootId }: {
     else setDeleting(false)
   }
 
+  const handleMouseEnter = () => {
+    if (popoverTimeout.current) clearTimeout(popoverTimeout.current)
+    popoverTimeout.current = setTimeout(() => setShowPopover(true), 500)
+  }
+
+  const handleMouseLeave = () => {
+    if (popoverTimeout.current) clearTimeout(popoverTimeout.current)
+    popoverTimeout.current = setTimeout(() => setShowPopover(false), 300)
+  }
+
   const color = getColor(post.profiles?.username || "a")
   const replyCount = post.replies?.length ?? 0
 
+  const repostCount = reposted ? 1 : 0;
+
   return (
-    <div className={`bg-white ${isReply ? "pt-4 pb-2" : "p-6 border-b border-slate-100 hover:bg-slate-50/50 transition-colors"}`}>
-      <div className="flex gap-4">
-        {/* Avatar — klik ke profil */}
-        <div className="relative shrink-0">
-          <Link
-            href={`/main/u/${encodeURIComponent(post.profiles?.username || "")}`}
-            className={`w-12 h-12 block ${post.profiles?.avatar_url ? 'bg-transparent' : color} rounded-2xl flex items-center justify-center text-white font-bold text-lg shadow-inner hover:opacity-90 hover:scale-105 transition-all overflow-hidden`}>
-            {post.profiles?.avatar_url ? (
-              <img src={post.profiles.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
-            ) : (
-              post.profiles?.username?.[0]?.toUpperCase() || "?"
+    <div className={`bg-white ${isReply ? "pt-3 pb-1 pr-4" : "p-4 border-b border-slate-100 hover:bg-slate-50/30 transition-colors"} cursor-pointer`}>
+      <div className="flex gap-3">
+        {/* Avatar Area with Line */}
+        <div className="relative shrink-0 flex flex-col items-center">
+          <div 
+            className="relative"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+          >
+            <Link
+              href={`/main/u/${encodeURIComponent(post.profiles?.username || "")}`}
+              className={`w-10 h-10 block ${post.profiles?.avatar_url ? 'bg-transparent' : color} rounded-full flex items-center justify-center text-white font-bold text-lg shadow-sm hover:opacity-90 transition-all overflow-hidden`}>
+              {post.profiles?.avatar_url ? (
+                <img src={post.profiles.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                post.profiles?.username?.[0]?.toUpperCase() || "?"
+              )}
+            </Link>
+            {showPopover && post.profiles && (
+              <UserPopover profile={post.profiles} currentUserId={currentUserId} onClose={() => setShowPopover(false)} />
             )}
-          </Link>
+          </div>
+          
+          {/* Thread Connecting Line */}
+          {(!isLastReply && isReply) || (post.replies && post.replies.length > 0) ? (
+            <div className="w-[2px] bg-slate-200 mt-2 flex-1 rounded-full absolute top-10 bottom-[-15px]"></div>
+          ) : null}
         </div>
 
         <div className="flex-1 min-w-0">
           {/* Header */}
-          <div className="flex items-center justify-between flex-wrap gap-2 mb-1">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between flex-wrap gap-1">
+            <div 
+              className="flex items-center gap-1.5"
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            >
               <Link
                 href={`/main/u/${encodeURIComponent(post.profiles?.username || "")}`}
-                className="font-bold text-slate-800 hover:text-blue-600 transition-colors">
+                className="font-bold text-slate-900 hover:underline transition-colors text-[15px]">
                 {post.profiles?.username || "Unknown"}
               </Link>
-              <span className="text-slate-400 text-xs font-medium">· {timeAgo(post.created_at)}</span>
+              <span className="text-slate-500 text-[15px]">@{post.profiles?.username || "unknown"}</span>
+              <span className="text-slate-500 text-[15px]">·</span>
+              <span className="text-slate-500 text-[15px] hover:underline">{timeAgo(post.created_at)}</span>
             </div>
-            {currentUserId === post.user_id && (
-              <button onClick={handleDelete} disabled={deleting}
-                className="text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-full p-2 transition-all">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-              </button>
-            )}
+            
+            <div className="flex items-center gap-2">
+              {currentUserId === post.user_id && (
+                <button onClick={(e) => { e.stopPropagation(); handleDelete(); }} disabled={deleting}
+                  className="text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full p-2 transition-all -mr-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              )}
+            </div>
           </div>
 
           <RenderContent text={post.content} />
 
           {/* Gambar Postingan */}
           {post.image_url && (
-            <div className="mt-3 rounded-2xl overflow-hidden border border-slate-100 shadow-sm">
+            <div 
+              onClick={(e) => { e.stopPropagation(); setShowImageModal(true); }}
+              className="mt-3 inline-block rounded-2xl overflow-hidden border border-slate-200/60 shadow-sm cursor-pointer"
+            >
               <img
                 src={post.image_url}
                 alt="Gambar postingan"
-                className="w-full max-h-96 object-cover"
+                className="max-w-[100%] sm:max-w-[500px] h-auto max-h-[510px] object-cover hover:opacity-90 transition-opacity block"
               />
             </div>
           )}
 
-          {/* Actions */}
-          <div className="mt-4 flex items-center gap-6 text-slate-400 text-sm font-medium">
-            <button onClick={() => setShowReplyForm(!showReplyForm)}
-              className={`flex items-center gap-2 transition hover:text-blue-600 group ${showReplyForm ? "text-blue-600" : ""}`}>
+          {/* Actions (Exact Twitter/X SVGs) */}
+          <div className="mt-3 flex items-center justify-between text-slate-500 text-[13px] font-medium max-w-[425px]">
+            {/* Reply */}
+            <button onClick={(e) => { e.stopPropagation(); setShowReplyForm(!showReplyForm); }}
+              className={`flex items-center gap-1 transition hover:text-blue-500 group ${showReplyForm ? "text-blue-500" : ""}`}>
               <div className="p-2 rounded-full group-hover:bg-blue-50 transition-colors -ml-2">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                <svg viewBox="0 0 24 24" aria-hidden="true" className="w-[18.5px] h-[18.5px]" fill="currentColor" stroke="none">
+                  <path d="M1.751 10c0-4.42 3.584-8 8.005-8h4.366c4.49 0 8.129 3.64 8.129 8.13 0 2.96-1.607 5.68-4.196 7.11l-8.054 4.46v-3.69h-.067c-4.49.1-8.183-3.51-8.183-8.01zm8.005-6c-3.317 0-6.005 2.69-6.005 6 0 3.37 2.77 6.08 6.138 6.01l.351-.01h1.761v2.3l5.087-2.81c1.951-1.08 3.163-3.13 3.163-5.36 0-3.39-2.744-6.13-6.129-6.13H9.756z"></path>
                 </svg>
               </div>
               {replyCount > 0 && <span>{replyCount}</span>}
             </button>
 
-            <button onClick={handleLike}
-              className={`flex items-center gap-2 transition group ${liked ? "text-pink-500" : "hover:text-pink-500"}`}>
-              <div className={`p-2 rounded-full group-hover:bg-pink-50 transition-colors -ml-2 ${liked ? "bg-pink-50" : ""}`}>
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill={liked ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+            {/* Repost */}
+            <button onClick={(e) => { e.stopPropagation(); setReposted(!reposted); }}
+              className={`flex items-center gap-1 transition group ${reposted ? "text-green-500" : "hover:text-green-500"}`}>
+              <div className={`p-2 rounded-full group-hover:bg-green-50 transition-colors -ml-2 ${reposted ? "bg-green-50" : ""}`}>
+                <svg viewBox="0 0 24 24" aria-hidden="true" className="w-[18.5px] h-[18.5px]" fill="currentColor" stroke="none">
+                  <path d="M4.5 3.88l4.432 4.14-1.364 1.46L5.5 7.55V16c0 1.1.896 2 2 2H13v2H7.5c-2.209 0-4-1.79-4-4V7.55L1.432 9.48.068 8.02 4.5 3.88zM16.5 6H11V4h5.5c2.209 0 4 1.79 4 4v8.45l2.068-1.93 1.364 1.46-4.432 4.14-4.432-4.14 1.364-1.46 2.068 1.93V8c0-1.1-.896-2-2-2z"></path>
                 </svg>
+              </div>
+              {repostCount > 0 && <span>{repostCount}</span>}
+            </button>
+
+            {/* Like */}
+            <button onClick={(e) => { e.stopPropagation(); handleLike(); }}
+              className={`flex items-center gap-1 transition group ${liked ? "text-pink-600" : "hover:text-pink-600"}`}>
+              <div className={`p-2 rounded-full group-hover:bg-pink-50 transition-colors -ml-2 ${liked ? "bg-pink-50" : ""}`}>
+                {liked ? (
+                  <svg viewBox="0 0 24 24" aria-hidden="true" className="w-[18.5px] h-[18.5px]" fill="currentColor" stroke="none">
+                    <path d="M20.884 13.19c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z"></path>
+                  </svg>
+                ) : (
+                  <svg viewBox="0 0 24 24" aria-hidden="true" className="w-[18.5px] h-[18.5px]" fill="currentColor" stroke="none">
+                    <path d="M16.697 5.5c-1.222-.06-2.679.51-3.89 2.16l-.805 1.09-.806-1.09C9.984 6.01 8.526 5.44 7.304 5.5c-1.243.07-2.349.78-2.91 1.91-.552 1.12-.633 2.78.479 4.82 1.074 1.97 3.257 4.27 7.129 6.61 3.87-2.34 6.052-4.64 7.126-6.61 1.111-2.04 1.03-3.7.477-4.82-.561-1.13-1.666-1.84-2.908-1.91zm4.187 7.69c-1.351 2.48-4.001 5.12-8.379 7.67l-.503.3-.504-.3c-4.379-2.55-7.029-5.19-8.382-7.67-1.36-2.5-1.41-4.86-.514-6.67.887-1.79 2.647-2.91 4.601-3.01 1.651-.09 3.368.56 4.798 2.01 1.429-1.45 3.146-2.1 4.796-2.01 1.954.1 3.714 1.22 4.601 3.01.896 1.81.846 4.17-.514 6.67z"></path>
+                  </svg>
+                )}
               </div>
               {likeCount > 0 && <span>{likeCount}</span>}
             </button>
 
-            <button onClick={handleBookmark}
-              className={`flex items-center gap-2 transition ml-auto group ${bookmarked ? "text-indigo-500" : "hover:text-indigo-500"}`}>
-              <div className={`p-2 rounded-full group-hover:bg-indigo-50 transition-colors -mr-2 ${bookmarked ? "bg-indigo-50" : ""}`}>
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill={bookmarked ? "currentColor" : "none"} viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+            {/* Views */}
+            <button onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-1 transition group hover:text-blue-500">
+              <div className="p-2 rounded-full group-hover:bg-blue-50 transition-colors -ml-2">
+                <svg viewBox="0 0 24 24" aria-hidden="true" className="w-[18.5px] h-[18.5px]" fill="currentColor" stroke="none">
+                  <path d="M8.75 21V3h2v18h-2zM18 21V8.5h2V21h-2zM4 21l.004-10h2L6 21H4zm9.248 0v-7h2v7h-2z"></path>
                 </svg>
               </div>
             </button>
+
+            {/* Share & Bookmark */}
+            <div className="flex items-center">
+              <button onClick={(e) => { e.stopPropagation(); handleBookmark(); }}
+                className={`flex items-center transition group ${bookmarked ? "text-blue-500" : "hover:text-blue-500"}`}>
+                <div className={`p-2 rounded-full group-hover:bg-blue-50 transition-colors ${bookmarked ? "bg-blue-50" : ""}`}>
+                  {bookmarked ? (
+                    <svg viewBox="0 0 24 24" aria-hidden="true" className="w-[18.5px] h-[18.5px]" fill="currentColor" stroke="none">
+                      <path d="M4 4.5C4 3.12 5.119 2 6.5 2h11C18.881 2 20 3.12 20 4.5v18.44l-8-5.71-8 5.71V4.5z"></path>
+                    </svg>
+                  ) : (
+                    <svg viewBox="0 0 24 24" aria-hidden="true" className="w-[18.5px] h-[18.5px]" fill="currentColor" stroke="none">
+                      <path d="M4 4.5C4 3.12 5.119 2 6.5 2h11C18.881 2 20 3.12 20 4.5v18.44l-8-5.71-8 5.71V4.5zM6.5 4c-.276 0-.5.22-.5.5v14.56l6-4.29 6 4.29V4.5c0-.28-.224-.5-.5-.5h-11z"></path>
+                    </svg>
+                  )}
+                </div>
+              </button>
+              
+              <button onClick={(e) => {
+                e.stopPropagation();
+                navigator.clipboard.writeText(`${window.location.origin}/main/feed/${post.id}`);
+                alert("Tautan disalin!");
+              }}
+                className="flex items-center transition group hover:text-blue-500">
+                <div className="p-2 rounded-full group-hover:bg-blue-50 transition-colors">
+                  <svg viewBox="0 0 24 24" aria-hidden="true" className="w-[18.5px] h-[18.5px]" fill="currentColor" stroke="none">
+                    <path d="M12 2.59l5.7 5.7-1.41 1.42L13 6.41V16h-2V6.41l-3.3 3.3-1.41-1.42L12 2.59zM21 15l-.02 3.51c0 1.38-1.12 2.49-2.5 2.49H5.5C4.11 21 3 19.88 3 18.5V15h2v3.5c0 .28.22.5.5.5h12.98c.28 0 .5-.22.5-.5L19 15h2z"></path>
+                  </svg>
+                </div>
+              </button>
+            </div>
           </div>
 
           {showReplyForm && (
-            <div className="mt-2 -ml-2">
+            <div className="mt-2 mb-2" onClick={(e) => e.stopPropagation()}>
               <PostForm
                 parentId={rootId || post.id}
                 placeholder={`Balas @${post.profiles?.username || "someone"}...`}
@@ -278,36 +378,54 @@ export default function PostCard({ post, isReply = false, rootId }: {
         </div>
       </div>
 
+      {/* Render Replies Line and Threads */}
       {post.replies && post.replies.length > 0 && (
-        <div className="ml-[28px] mt-2 pl-8">
-          {!showReplies ? (
-            <button
-              onClick={() => setShowReplies(true)}
-              className="text-[13px] font-bold text-slate-500 hover:text-blue-600 transition-colors flex items-center gap-3 py-1.5"
-            >
-              <div className="w-8 h-[2px] bg-slate-200 rounded-full"></div>
-              Lihat {post.replies.length} balasan
-            </button>
-          ) : (
-            <div className="border-l-2 border-slate-100 pl-5 space-y-2 mt-2 relative">
+        <div className="mt-2">
+          {!showReplies && !isReply ? (
+            <div className="ml-12 pl-2">
               <button
-                onClick={() => setShowReplies(false)}
-                className="absolute -left-[1px] top-0 bottom-0 w-1 hover:bg-slate-300 transition-colors"
-                title="Sembunyikan balasan"
-              />
-              <div className="pb-2">
-                <button
-                  onClick={() => setShowReplies(false)}
-                  className="text-[12px] font-bold text-slate-400 hover:text-slate-600 mb-2 transition-colors"
-                >
-                  Sembunyikan balasan
-                </button>
-                {post.replies.map((reply) => (
-                  <PostCard key={reply.id} post={reply} isReply rootId={post.id} />
-                ))}
-              </div>
+                onClick={(e) => { e.stopPropagation(); setShowReplies(true); }}
+                className="text-[14px] font-medium text-blue-500 hover:underline flex items-center gap-2 py-1"
+              >
+                Tampilkan utas
+              </button>
+            </div>
+          ) : (
+            <div className={`space-y-0 ${isReply ? "mt-1" : ""}`}>
+              {post.replies.map((reply, index) => (
+                <PostCard 
+                  key={reply.id} 
+                  post={reply} 
+                  isReply 
+                  rootId={post.id} 
+                  isLastReply={index === post.replies!.length - 1}
+                />
+              ))}
             </div>
           )}
+        </div>
+      )}
+
+      {/* Fullscreen Image Modal */}
+      {showImageModal && post.image_url && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center cursor-default backdrop-blur-sm"
+          onClick={(e) => { e.stopPropagation(); setShowImageModal(false); }}
+        >
+          <button 
+            className="absolute top-4 left-4 p-2 text-white bg-black/50 hover:bg-black/70 rounded-full transition-colors"
+            onClick={(e) => { e.stopPropagation(); setShowImageModal(false); }}
+          >
+            <svg viewBox="0 0 24 24" aria-hidden="true" className="w-6 h-6" fill="currentColor" stroke="none">
+              <path d="M13.414 12l5.793-5.793c.39-.39.39-1.023 0-1.414s-1.023-.39-1.414 0L12 10.586 6.207 4.793c-.39-.39-1.023-.39-1.414 0s-.39 1.023 0 1.414L10.586 12l-5.793 5.793c-.39.39-.39 1.023 0 1.414.195.195.45.293.707.293s.512-.098.707-.293L12 13.414l5.793 5.793c.195.195.45.293.707.293s.512-.098.707-.293c.39-.39.39-1.023 0-1.414L13.414 12z"></path>
+            </svg>
+          </button>
+          <img
+            src={post.image_url}
+            alt="Gambar penuh"
+            className="max-w-[95vw] max-h-[95vh] object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
         </div>
       )}
     </div>
