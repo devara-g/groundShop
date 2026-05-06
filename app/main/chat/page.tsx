@@ -104,11 +104,11 @@ export default async function ChatPage() {
                   )}
                 </div>
 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <p className="font-bold text-slate-800 group-hover:text-blue-600 transition-colors">{c.other?.username || "Unknown"}</p>
+                <div className="flex-1 min-w-0 overflow-hidden">
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <p className="font-bold text-slate-800 group-hover:text-blue-600 transition-colors truncate min-w-0">{c.other?.username || "Unknown"}</p>
                     {c.lastMsg && (
-                      <p className="text-xs font-medium text-slate-400 shrink-0 ml-2">{timeAgo(c.lastMsg.created_at)}</p>
+                      <p className="text-xs font-medium text-slate-400 shrink-0">{timeAgo(c.lastMsg.created_at)}</p>
                     )}
                   </div>
                   <p className={`text-sm truncate ${c.unread > 0 ? "font-bold text-slate-800" : "text-slate-500"}`}>

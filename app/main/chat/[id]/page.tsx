@@ -70,8 +70,8 @@ export default async function ChatRoomPage(props: { params: Promise<{ id: string
           )}
           <div className="absolute -bottom-1 -right-1 w-3.5 h-3.5 bg-green-500 border-2 border-white rounded-full"></div>
         </div>
-        <div>
-          <p className="font-bold text-slate-800 text-lg">{other?.username || "Unknown"}</p>
+        <div className="flex-1 min-w-0">
+          <p className="font-bold text-slate-800 text-lg truncate">{other?.username || "Unknown"}</p>
           <p className="text-xs font-bold text-green-500">Online</p>
         </div>
       </div>

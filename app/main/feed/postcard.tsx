@@ -238,20 +238,20 @@ export default function PostCard({ post, isReply = false, rootId, isLastReply = 
 
         <div className="flex-1 min-w-0">
           {/* Header */}
-          <div className="flex items-center justify-between flex-wrap gap-1">
+          <div className="flex items-center justify-between gap-1 min-w-0">
             <div 
-              className="flex items-center gap-1.5"
+              className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden"
               onMouseEnter={handleMouseEnter}
               onMouseLeave={handleMouseLeave}
             >
               <Link
                 href={`/main/u/${encodeURIComponent(post.profiles?.username || "")}`}
-                className="font-bold text-slate-900 hover:underline transition-colors text-[15px]">
+                className="font-bold text-slate-900 hover:underline transition-colors text-[15px] truncate shrink-0 max-w-[30%]">
                 {post.profiles?.username || "Unknown"}
               </Link>
-              <span className="text-slate-500 text-[15px]">@{post.profiles?.username || "unknown"}</span>
-              <span className="text-slate-500 text-[15px]">·</span>
-              <span className="text-slate-500 text-[15px] hover:underline">{timeAgo(post.created_at)}</span>
+              <span className="text-slate-500 text-[15px] truncate shrink min-w-0">@{post.profiles?.username || "unknown"}</span>
+              <span className="text-slate-500 text-[15px] shrink-0">·</span>
+              <span className="text-slate-500 text-[15px] hover:underline shrink-0 whitespace-nowrap">{timeAgo(post.created_at)}</span>
             </div>
             
             <div className="flex items-center gap-2">
