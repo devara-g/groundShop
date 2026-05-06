@@ -22,7 +22,7 @@ export async function GET(request: Request) {
       // Pastikan user ada di tabel profiles
       const { data: profile, error: profileError } = await supabase
         .from('profiles')
-        .select('id, avatar_url')
+        .select('id, username, avatar_url')
         .eq('id', data.user.id)
         .maybeSingle()
 
@@ -32,12 +32,11 @@ export async function GET(request: Request) {
 
       const fullName = data.user.user_metadata?.full_name
       const avatarUrl = data.user.user_metadata?.avatar_url
+      const baseUsername = fullName ? fullName.replace(/\s+/g, '').toLowerCase() : (data.user.email?.split('@')[0] || 'user')
+      const uniqueUsername = `${baseUsername}${Math.floor(Math.random() * 10000)}`
 
       if (!profile) {
-        // Jika belum ada, buat baru
-        const baseUsername = fullName ? fullName.replace(/\s+/g, '').toLowerCase() : (data.user.email?.split('@')[0] || 'user')
-        const uniqueUsername = `${baseUsername}${Math.floor(Math.random() * 10000)}`
-        
+        // Jika belum ada sama sekali, buat baru
         const { error: insertError } = await supabase.from('profiles').insert({
           id: data.user.id,
           username: uniqueUsername,
@@ -47,14 +46,21 @@ export async function GET(request: Request) {
         if (insertError) {
           console.error("Gagal membuat profile:", insertError)
         }
-      } else if (!profile.avatar_url && avatarUrl) {
-        // Jika sudah ada tapi belum punya foto, otomatis pasang foto dari Google
-        const { error: updateError } = await supabase.from('profiles').update({
-          avatar_url: avatarUrl
-        }).eq('id', data.user.id)
-        
-        if (updateError) {
-          console.error("Gagal update foto profile:", updateError)
+      } else {
+        // Jika sudah ada (mungkin terbuat oleh trigger DB), cek apakah username/avatar kosong
+        const updates: any = {}
+        if (!profile.username) {
+          updates.username = uniqueUsername
+        }
+        if (!profile.avatar_url && avatarUrl) {
+          updates.avatar_url = avatarUrl
+        }
+
+        if (Object.keys(updates).length > 0) {
+          const { error: updateError } = await supabase.from('profiles').update(updates).eq('id', data.user.id)
+          if (updateError) {
+            console.error("Gagal update foto/nama profile:", updateError)
+          }
         }
       }
 
