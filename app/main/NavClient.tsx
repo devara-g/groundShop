@@ -75,7 +75,7 @@ export function DesktopNav({ unreadCount: initialCount = 0 }: { unreadCount?: nu
         .neq("messages.sender_id", user.id)
         
       if (!isMounted) return
-      const uCount = unreadConvos?.reduce((acc, c) => acc + (Array.isArray(c.messages) ? c.messages.length : 0), 0) || 0
+      const uCount = unreadConvos?.reduce((acc: any, c: any) => acc + (Array.isArray(c.messages) ? c.messages.length : 0), 0) || 0
       setUnreadCount(uCount)
 
       // Update badge Notifikasi pakai localStorage (last seen)
@@ -98,7 +98,7 @@ export function DesktopNav({ unreadCount: initialCount = 0 }: { unreadCount?: nu
 
         const { data: myPosts } = await supabase.from("posts").select("id").eq("user_id", user.id)
         if (myPosts && myPosts.length > 0) {
-          const { count: rCount } = await supabase.from("posts").select("id", { count: "exact", head: true }).in("parent_id", myPosts.map(p => p.id)).neq("user_id", user.id).gt("created_at", lastSeen)
+          const { count: rCount } = await supabase.from("posts").select("id", { count: "exact", head: true }).in("parent_id", myPosts.map((p: any) => p.id)).neq("user_id", user.id).gt("created_at", lastSeen)
           if (rCount) nCount += rCount
         }
         
@@ -174,7 +174,7 @@ export function MobileNav({ unreadCount: initialCount = 0 }: { unreadCount?: num
         .neq("messages.sender_id", user.id)
         
       if (!isMounted) return
-      const uCount = unreadConvos?.reduce((acc, c) => acc + (Array.isArray(c.messages) ? c.messages.length : 0), 0) || 0
+      const uCount = unreadConvos?.reduce((acc: any, c: any) => acc + (Array.isArray(c.messages) ? c.messages.length : 0), 0) || 0
       setUnreadCount(uCount)
 
       if (pathname === "/main/notifications") {
@@ -196,7 +196,7 @@ export function MobileNav({ unreadCount: initialCount = 0 }: { unreadCount?: num
 
         const { data: myPosts } = await supabase.from("posts").select("id").eq("user_id", user.id)
         if (myPosts && myPosts.length > 0) {
-          const { count: rCount } = await supabase.from("posts").select("id", { count: "exact", head: true }).in("parent_id", myPosts.map(p => p.id)).neq("user_id", user.id).gt("created_at", lastSeen)
+          const { count: rCount } = await supabase.from("posts").select("id", { count: "exact", head: true }).in("parent_id", myPosts.map((p: any) => p.id)).neq("user_id", user.id).gt("created_at", lastSeen)
           if (rCount) nCount += rCount
         }
         

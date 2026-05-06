@@ -50,12 +50,12 @@ export default async function FeedPage({ searchParams }: { searchParams: Promise
     supabase.from("bookmarks").select("post_id").eq("user_id", user!.id),
   ])
 
-  const likedIds = new Set((userLikes || []).map((l) => l.post_id))
-  const bookmarkedIds = new Set((userBookmarks || []).map((b) => b.post_id))
+  const likedIds = new Set((userLikes || []).map((l: any) => l.post_id))
+  const bookmarkedIds = new Set((userBookmarks || []).map((b: any) => b.post_id))
 
   const norm = (p: any) => (Array.isArray(p) ? p[0] ?? null : p)
 
-  const posts = (rawPosts || []).map((post) => ({
+  const posts = (rawPosts || []).map((post: any) => ({
     ...post,
     profiles: norm(post.profiles),
     like_count: (post.likes as any)?.[0]?.count ?? 0,
