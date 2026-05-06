@@ -138,7 +138,7 @@ export default function ChatMessages({ conversationId, initialMessages, currentU
         event: "*", // Listen to INSERT, UPDATE, DELETE
         schema: "public",
         table: "messages",
-      }, (payload) => {
+      }, (payload: any) => {
         if (payload.eventType === "INSERT") {
           const newMsg = payload.new as Message
           if (newMsg.conversation_id !== conversationId) return
