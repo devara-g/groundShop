@@ -9,6 +9,9 @@ export const metadata: Metadata = {
   description: "Platform sosial dan belanja generasi berikutnya",
 }
 
+import ToastProvider from "./components/ToastProvider"
+import ConfirmProvider from "./components/ConfirmProvider"
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -17,6 +20,8 @@ export default function RootLayout({
   return (
     <html lang="id" className={`h-full antialiased`}>
       <body className={`${inter.className} min-h-full flex flex-col bg-slate-50 text-slate-900`}>
+        <ToastProvider />
+        <ConfirmProvider />
         {children}
       </body>
     </html>

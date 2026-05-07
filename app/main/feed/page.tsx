@@ -73,21 +73,21 @@ export default async function FeedPage({ searchParams }: { searchParams: Promise
   }))
 
   return (
-    <div className="flex flex-col h-full bg-white w-full border-x border-slate-100/50">
-      <div className="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-slate-100">
-        <h1 className="text-xl font-bold text-slate-900 tracking-tight px-6 pt-4 pb-2">Beranda</h1>
-        <div className="flex w-full mt-2 font-bold text-slate-500 text-sm">
-          <Link href="/main/feed?tab=foryou" className="flex-1 text-center hover:bg-slate-100/50 cursor-pointer transition-colors pt-3 pb-3 relative block">
-            <span className={currentTab === 'foryou' ? "text-slate-900" : ""}>Untuk Anda</span>
-            {currentTab === 'foryou' && <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-1 bg-blue-500 rounded-full"></div>}
+    <div className="flex flex-col h-full bg-transparent w-full">
+      <div className="sticky top-0 z-20 bg-white/70 backdrop-blur-2xl border-b border-slate-100/60 shadow-sm">
+        <h1 className="text-2xl font-black text-slate-900 tracking-tight px-6 pt-5 pb-1">Beranda</h1>
+        <div className="flex w-full mt-1 font-bold text-slate-500 text-[15px]">
+          <Link href="/main/feed?tab=foryou" className="flex-1 text-center hover:bg-slate-50/50 cursor-pointer transition-colors pt-3 pb-4 relative group block">
+            <span className={`transition-colors ${currentTab === 'foryou' ? "text-slate-900" : "group-hover:text-slate-700"}`}>Untuk Anda</span>
+            {currentTab === 'foryou' && <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-14 h-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-t-full"></div>}
           </Link>
-          <Link href="/main/feed?tab=following" className="flex-1 text-center hover:bg-slate-100/50 cursor-pointer transition-colors pt-3 pb-3 relative block">
-            <span className={currentTab === 'following' ? "text-slate-900" : ""}>Mengikuti</span>
-            {currentTab === 'following' && <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-16 h-1 bg-blue-500 rounded-full"></div>}
+          <Link href="/main/feed?tab=following" className="flex-1 text-center hover:bg-slate-50/50 cursor-pointer transition-colors pt-3 pb-4 relative group block">
+            <span className={`transition-colors ${currentTab === 'following' ? "text-slate-900" : "group-hover:text-slate-700"}`}>Mengikuti</span>
+            {currentTab === 'following' && <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-14 h-1.5 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-t-full"></div>}
           </Link>
         </div>
       </div>
-      <div className="flex-1 w-full max-w-2xl mx-auto overflow-y-auto pb-20 hide-scrollbar">
+      <div className="flex-1 w-full max-w-2xl mx-auto overflow-y-auto pb-20 hide-scrollbar bg-white">
         <PostForm />
         <div className="w-full">
           <PostList posts={posts as any} />

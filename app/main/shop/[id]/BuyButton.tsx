@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { toast } from "@/lib/toast"
 
 export default function BuyButton({ product, currentUserId, sellerWallet }: { product: any, currentUserId: string | null, sellerWallet: string | null }) {
   const [loading, setLoading] = useState(false)
@@ -11,9 +12,9 @@ export default function BuyButton({ product, currentUserId, sellerWallet }: { pr
   const supabase = createClient()
 
   const handleBuy = async () => {
-    if (!currentUserId) return alert("Login dulu bro!")
-    if (currentUserId === product.seller_id) return alert("Masa beli barang jualan sendiri wkwk")
-    if (!sellerWallet) return alert("Penjual belum mendaftarkan dompet crypto-nya.")
+    if (!currentUserId) return toast("Login dulu bro!", "error")
+    if (currentUserId === product.seller_id) return toast("Masa beli barang jualan sendiri wkwk", "error")
+    if (!sellerWallet) return toast("Penjual belum mendaftarkan dompet crypto-nya.", "error")
 
     try {
       setLoading(true)
@@ -61,12 +62,12 @@ export default function BuyButton({ product, currentUserId, sellerWallet }: { pr
       await supabase.from("products").update({ stock: product.stock - 1 }).eq("id", product.id)
       
       setSuccess(true)
-      alert(`Transaksi Berhasil! 🎉\nHash: ${txHash}`)
+      toast(`Transaksi Berhasil! 🎉 Hash: ${txHash}`, "success")
       router.refresh()
 
     } catch (err: any) {
       console.error(err)
-      alert(err.message || "Transaksi gagal atau dibatalkan oleh user.")
+      toast(err.message || "Transaksi gagal atau dibatalkan oleh user.", "error")
     } finally {
       setLoading(false)
     }

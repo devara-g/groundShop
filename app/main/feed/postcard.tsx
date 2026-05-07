@@ -6,6 +6,8 @@ import { useState, useEffect, useRef } from "react"
 import PostForm from "./postform"
 import AddFriendButton from "@/app/main/contacts/AddFriendButton"
 import Image from "next/image"
+import { toast } from "@/lib/toast"
+import { confirmAction } from "@/lib/confirm"
 
 type Profile = { id: string; username: string; avatar_url: string | null }
 type Post = {
@@ -184,11 +186,17 @@ export default function PostCard({ post, isReply = false, rootId, isLastReply = 
   }
 
   const handleDelete = async () => {
-    if (!confirm("Hapus postingan ini?")) return
+    const isConfirmed = await confirmAction("Hapus postingan ini?")
+    if (!isConfirmed) return
     setDeleting(true)
     const { error } = await supabase.from("posts").delete().eq("id", post.id)
-    if (!error) router.refresh()
-    else setDeleting(false)
+    if (!error) {
+      toast("Postingan berhasil dihapus", "success")
+      router.refresh()
+    } else {
+      toast("Gagal menghapus postingan: " + error.message, "error")
+      setDeleting(false)
+    }
   }
 
   const handleMouseEnter = () => {
@@ -355,7 +363,7 @@ export default function PostCard({ post, isReply = false, rootId, isLastReply = 
               <button onClick={(e) => {
                 e.stopPropagation();
                 navigator.clipboard.writeText(`${window.location.origin}/main/feed/${post.id}`);
-                alert("Tautan disalin!");
+                toast("Tautan disalin!", "success");
               }}
                 className="flex items-center transition group hover:text-blue-500">
                 <div className="p-2 rounded-full group-hover:bg-blue-50 transition-colors">

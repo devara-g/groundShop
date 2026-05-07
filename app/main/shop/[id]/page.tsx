@@ -2,6 +2,9 @@ import { createServerSupabase } from "@/lib/supabase/server"
 import Link from "next/link"
 import BuyButton from "@/app/main/shop/[id]/BuyButton"
 import SafeImage from "../SafeImage"
+import ReviewForm from "./ReviewForm"
+
+export const revalidate = 0
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const supabase = await createServerSupabase()
@@ -27,10 +30,31 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     )
   }
 
+  // Ambil Ulasan Asli (Join dengan profiles)
+  const { data: reviews, error: reviewsError } = await supabase
+    .from("product_reviews")
+    .select(`
+      *,
+      profiles (
+        username,
+        avatar_url
+      )
+    `)
+    .eq("product_id", id)
+    .order("created_at", { ascending: false })
+
+  if (reviewsError) {
+    console.error("Gagal ambil ulasan:", reviewsError)
+  }
+
   const { data: { user } } = await supabase.auth.getUser()
 
+  const avgRating = reviews && reviews.length > 0 
+    ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
+    : "0"
+
   return (
-    <div className="flex-1 bg-[#FAFAFA] overflow-y-auto p-4 md:p-8 relative">
+    <div className="flex-1 bg-[#FAFAFA] overflow-y-auto p-4 md:p-8 relative hide-scrollbar">
       {/* Background Decor */}
       <div className="absolute top-0 left-0 w-full h-64 bg-gradient-to-b from-blue-50/50 to-transparent pointer-events-none"></div>
 
@@ -79,6 +103,19 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                   <span className="text-2xl mb-1 text-slate-500">ETH</span>
                 </div>
               </div>
+              <div className="h-12 w-px bg-slate-200 mx-2 hidden md:block"></div>
+              <div className="flex flex-col">
+                <p className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-1">Rating Produk</p>
+                <div className="flex items-center gap-1.5">
+                  <div className="flex items-center text-orange-400">
+                    {[...Array(5)].map((_, i) => (
+                      <svg key={i} className={`w-5 h-5 fill-current ${i < Math.round(Number(avgRating)) ? "text-orange-400" : "text-slate-200"}`} viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                    ))}
+                  </div>
+                  <span className="text-lg font-black text-slate-900">{avgRating}</span>
+                  <span className="text-xs text-slate-400 font-bold">({reviews?.length || 0} Ulasan)</span>
+                </div>
+              </div>
             </div>
 
             {/* Info Penjual */}
@@ -111,6 +148,52 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
               </h3>
               <div className="prose prose-slate max-w-none text-slate-600 bg-white p-6 rounded-3xl border border-slate-100 leading-relaxed shadow-sm">
                 {product.description || "Tidak ada deskripsi."}
+              </div>
+            </div>
+
+            {/* Form Tambah Ulasan */}
+            <ReviewForm productId={product.id} userId={user?.id || null} />
+
+            {/* Reviews Section */}
+            <div className="mb-10">
+              <h3 className="text-sm font-black text-slate-900 mb-4 uppercase tracking-wider flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-orange-500" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/>
+                  </svg>
+                  Ulasan Pelanggan ({reviews?.length || 0})
+                </span>
+              </h3>
+              
+              <div className="space-y-4">
+                {reviews && reviews.length > 0 ? (
+                  reviews.map((review: any) => (
+                    <div key={review.id} className="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <SafeImage 
+                            src={review.profiles?.avatar_url} 
+                            fallbackText={review.profiles?.username}
+                            isAvatar={true}
+                            className="w-7 h-7 rounded-full object-cover" 
+                          />
+                          <span className="text-xs font-black text-slate-700">{review.profiles?.username || "Tanpa Nama"}</span>
+                        </div>
+                        <div className="flex text-orange-400">
+                          {[...Array(5)].map((_, starI) => (
+                            <svg key={starI} className={`w-3 h-3 fill-current ${starI < review.rating ? "text-orange-400" : "text-slate-200"}`} viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                          ))}
+                        </div>
+                      </div>
+                      <p className="text-sm text-slate-500 leading-relaxed">{review.comment}</p>
+                      <p className="text-[10px] text-slate-300 mt-2 font-medium">{new Date(review.created_at).toLocaleDateString("id-ID")}</p>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-10 bg-white rounded-2xl border border-dashed border-slate-200">
+                    <p className="text-sm text-slate-400 font-medium">Belum ada ulasan untuk produk ini.</p>
+                  </div>
+                )}
               </div>
             </div>
 

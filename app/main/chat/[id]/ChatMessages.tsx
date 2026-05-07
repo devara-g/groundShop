@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { toast } from "@/lib/toast"
+import { confirmAction } from "@/lib/confirm"
 
 type Message = {
   id: string
@@ -173,7 +175,8 @@ export default function ChatMessages({ conversationId, initialMessages, currentU
   let lastDate = ""
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Hapus pesan ini? Pesan akan terhapus untuk semua orang.")) return
+    const isConfirmed = await confirmAction("Hapus pesan ini? Pesan akan terhapus untuk semua orang.")
+    if (!isConfirmed) return
     
     // Simpan pesan lama buat jaga-jaga kalau gagal
     const originalMessages = [...messages]
@@ -185,9 +188,11 @@ export default function ChatMessages({ conversationId, initialMessages, currentU
     const { error } = await supabase.from("messages").delete().eq("id", id)
     if (error) {
       console.error(error)
-      alert("Gagal menghapus pesan! Pastikan Supabase RLS mengizinkan DELETE: " + error.message)
+      toast("Gagal menghapus pesan! Pastikan Supabase RLS mengizinkan DELETE: " + error.message, "error")
       // Balikin pesan ke layar kalau gagal
       setMessages(originalMessages)
+    } else {
+      toast("Pesan berhasil dihapus", "success")
     }
   }
 

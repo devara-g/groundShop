@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from "react"
 import { createClient } from "@/lib/supabase/client"
+import { toast } from "@/lib/toast"
 
 export default function MessageInput({ conversationId, currentUserId }: {
   conversationId: string
@@ -77,7 +78,8 @@ export default function MessageInput({ conversationId, currentUserId }: {
         setRecordingTime(prev => prev + 1)
       }, 1000)
     } catch (err) {
-      alert("Tidak dapat mengakses mikrofon. Pastikan browser Anda mengizinkan akses.")
+      console.error("Gagal akses mikrofon:", err)
+      toast("Tidak dapat mengakses mikrofon. Pastikan browser Anda mengizinkan akses.", "error")
     }
   }
 

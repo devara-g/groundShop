@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { toast } from "@/lib/toast"
 
 export default function CreateProductPage() {
   const [title, setTitle] = useState("")
@@ -42,13 +43,13 @@ export default function CreateProductPage() {
 
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
-      alert("Harus login dulu!")
+      toast("Harus login dulu!", "error")
       setLoading(false)
       return
     }
 
     if (!walletAddress.startsWith("0x") || walletAddress.length !== 42) {
-      alert("Alamat dompet Metamask tidak valid. Harus dimulai dengan 0x dan panjang 42 karakter.")
+      toast("Alamat dompet Metamask tidak valid. Harus dimulai dengan 0x dan panjang 42 karakter.", "error")
       setLoading(false)
       return
     }
@@ -66,7 +67,7 @@ export default function CreateProductPage() {
 
       if (uploadError) {
         console.error("Gagal upload gambar:", uploadError)
-        alert("Gagal mengunggah gambar. Pastikan format didukung dan ukuran kecil.")
+        toast("Gagal mengunggah gambar. Pastikan format didukung dan ukuran kecil.", "error")
         setLoading(false)
         return
       }
@@ -77,7 +78,7 @@ export default function CreateProductPage() {
         
       finalImageUrl = publicUrl
     } else {
-      alert("Wajib upload gambar barang!")
+      toast("Wajib upload gambar barang!", "error")
       setLoading(false)
       return
     }
@@ -97,9 +98,9 @@ export default function CreateProductPage() {
 
     if (error) {
       console.error(error)
-      alert("Gagal menambahkan barang: " + error.message)
+      toast("Gagal menambahkan barang: " + error.message, "error")
     } else {
-      alert("Barang berhasil dijual! 🚀")
+      toast("Barang berhasil dijual! 🚀", "success")
       router.push("/main/shop")
       router.refresh()
     }

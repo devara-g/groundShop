@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
+import { confirmAction } from "@/lib/confirm"
+import { toast } from "@/lib/toast"
 
 const COLORS = ["bg-blue-500","bg-purple-500","bg-green-500","bg-orange-500","bg-pink-500","bg-teal-500"]
 const getColor = (name: string) => COLORS[(name?.charCodeAt(0) || 0) % COLORS.length]
@@ -22,10 +24,12 @@ export default function FriendsList({ friends, currentUserId }: { friends: Frien
   const supabase = createClient()
   const router = useRouter()
 
-  const handleRemove = async (id: string) => {
-    if (!confirm("Hapus dari daftar teman?")) return
+  const handleRemove = async (id: string, username: string) => {
+    const isConfirmed = await confirmAction(`Hapus ${username} dari daftar teman?`)
+    if (!isConfirmed) return
     await supabase.from("friendships").delete().eq("id", id)
     setRemoved(prev => new Set(prev).add(id))
+    toast(`${username} dihapus dari daftar teman`, "success")
     router.refresh()
   }
 
@@ -116,7 +120,7 @@ export default function FriendsList({ friends, currentUserId }: { friends: Frien
                     {starting === friend.id ? "..." : "💬 Chat"}
                   </button>
 
-                  <button onClick={() => handleRemove(friendship.id)}
+                  <button onClick={() => handleRemove(friendship.id, friend.username)}
                     className="opacity-0 group-hover:opacity-100 text-xs text-red-500 hover:text-white transition-colors px-3 py-2 rounded-full hover:bg-red-500 bg-red-50 font-bold">
                     Hapus
                   </button>
