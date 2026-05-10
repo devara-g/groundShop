@@ -21,6 +21,58 @@ const COLORS = ["bg-blue-500","bg-purple-500","bg-green-500","bg-orange-500","bg
 const getColor = (name: string) => COLORS[(name?.charCodeAt(0) || 0) % COLORS.length]
 import Link from "next/link"
 
+function FollowBadge({ targetUserId, currentUserId }: { targetUserId: string, currentUserId: string | null }) {
+  const [status, setStatus] = useState<"none" | "friends" | "pending_sent">("none")
+  const [loading, setLoading] = useState(true)
+  const supabase = createClient()
+  const router = useRouter()
+
+  useEffect(() => {
+    if (!currentUserId || targetUserId === currentUserId) { setLoading(false); return }
+    supabase.from("friendships")
+      .select("status, requester_id")
+      .or(`and(requester_id.eq.${currentUserId},addressee_id.eq.${targetUserId}),and(requester_id.eq.${targetUserId},addressee_id.eq.${currentUserId})`)
+      .single()
+      .then(({data}: {data: any}) => {
+        if (!data) setStatus("none")
+        else if (data.status === "accepted") setStatus("friends")
+        else if (data.requester_id === currentUserId) setStatus("pending_sent")
+        else setStatus("friends")
+        setLoading(false)
+      })
+  }, [currentUserId, targetUserId])
+
+  const handleFollow = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (!currentUserId) { toast("Silakan login dulu", "error"); return }
+    setLoading(true)
+    const { error } = await supabase.from("friendships").insert({ requester_id: currentUserId, addressee_id: targetUserId })
+    if (!error) {
+      setStatus("pending_sent")
+      toast("Permintaan pertemanan dikirim", "success")
+      router.refresh()
+    } else {
+      toast("Gagal: " + error.message, "error")
+    }
+    setLoading(false)
+  }
+
+  if (loading || status !== "none" || !currentUserId || targetUserId === currentUserId) return null;
+
+  return (
+    <button 
+      onClick={handleFollow}
+      className="absolute -bottom-1 -right-1 w-[18px] h-[18px] bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center border-2 border-white shadow-sm transition-transform hover:scale-110 z-10"
+      title="Ikuti"
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" className="w-2.5 h-2.5">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+      </svg>
+    </button>
+  )
+}
+
 function RenderContent({ text }: { text: string }) {
   // Pecah berdasarkan @[nama berspasi] ATAU @nama_biasa
   const parts = text.split(/(@\[[^\]]+\]|@\w+)/g)
@@ -142,8 +194,8 @@ const fetchCurrentUserId = (supabase: any): Promise<string | null> => {
   return cachedUserPromise!;
 };
 
-export default function PostCard({ post, isReply = false, rootId, isLastReply = false }: {
-  post: Post; isReply?: boolean; rootId?: string; isLastReply?: boolean
+export default function PostCard({ post, isReply = false, rootId, isLastReply = false, defaultShowReplies = false }: {
+  post: Post; isReply?: boolean; rootId?: string; isLastReply?: boolean; defaultShowReplies?: boolean
 }) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null)
   const [showReplyForm, setShowReplyForm] = useState(false)
@@ -152,7 +204,7 @@ export default function PostCard({ post, isReply = false, rootId, isLastReply = 
   const [liked, setLiked] = useState(post.is_liked ?? false)
   const [likeCount, setLikeCount] = useState(post.like_count ?? 0)
   const [bookmarked, setBookmarked] = useState(post.is_bookmarked ?? false)
-  const [showReplies, setShowReplies] = useState(false)
+  const [showReplies, setShowReplies] = useState(defaultShowReplies)
   const [showPopover, setShowPopover] = useState(false)
   const [reposted, setReposted] = useState(false)
   const popoverTimeout = useRef<NodeJS.Timeout | null>(null)
@@ -215,7 +267,13 @@ export default function PostCard({ post, isReply = false, rootId, isLastReply = 
   const repostCount = reposted ? 1 : 0;
 
   return (
-    <div className={`bg-white ${isReply ? "pt-3 pb-1 pr-4" : "p-4 border-b border-slate-100 hover:bg-slate-50/30 transition-colors"} cursor-pointer`}>
+    <div 
+      className={`bg-white ${isReply ? "pt-3 pb-1 pr-4" : "p-4 border-b border-slate-100 hover:bg-slate-50/30 transition-colors"} cursor-pointer`}
+      onClick={(e) => {
+        if ((e.target as HTMLElement).closest('button, a, input, form')) return;
+        router.push(`/main/feed/${post.id}`)
+      }}
+    >
       <div className="flex gap-3">
         {/* Avatar Area with Line */}
         <div className="relative shrink-0 flex flex-col items-center">
@@ -226,13 +284,14 @@ export default function PostCard({ post, isReply = false, rootId, isLastReply = 
           >
             <Link
               href={`/main/u/${encodeURIComponent(post.profiles?.username || "")}`}
-              className={`w-10 h-10 block ${post.profiles?.avatar_url ? 'bg-transparent' : color} rounded-full flex items-center justify-center text-white font-bold text-lg shadow-sm hover:opacity-90 transition-all overflow-hidden`}>
+              className={`w-10 h-10 block ${post.profiles?.avatar_url ? 'bg-transparent' : color} rounded-full flex items-center justify-center text-white font-bold text-lg shadow-sm hover:opacity-90 transition-all overflow-hidden relative z-0`}>
               {post.profiles?.avatar_url ? (
                 <img src={post.profiles.avatar_url} alt="Avatar" className="w-full h-full object-cover" />
               ) : (
                 post.profiles?.username?.[0]?.toUpperCase() || "?"
               )}
             </Link>
+            <FollowBadge targetUserId={post.user_id} currentUserId={currentUserId} />
             {showPopover && post.profiles && (
               <UserPopover profile={post.profiles} currentUserId={currentUserId} onClose={() => setShowPopover(false)} />
             )}
@@ -285,7 +344,7 @@ export default function PostCard({ post, isReply = false, rootId, isLastReply = 
               <img
                 src={post.image_url}
                 alt="Gambar postingan"
-                className="max-w-[100%] sm:max-w-[500px] h-auto max-h-[510px] object-cover hover:opacity-90 transition-opacity block"
+                className="max-w-full sm:max-w-[500px] h-auto max-h-[510px] object-cover hover:opacity-90 transition-opacity block"
               />
             </div>
           )}
@@ -419,7 +478,7 @@ export default function PostCard({ post, isReply = false, rootId, isLastReply = 
       {/* Fullscreen Image Modal */}
       {showImageModal && post.image_url && (
         <div 
-          className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center cursor-default backdrop-blur-sm"
+          className="fixed inset-0 z-100 bg-black/90 flex items-center justify-center cursor-default backdrop-blur-sm"
           onClick={(e) => { e.stopPropagation(); setShowImageModal(false); }}
         >
           <button 
